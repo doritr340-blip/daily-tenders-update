@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>שעון נוכחות יומי</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>⏱ שעון נוכחות</h1>
+      <div class="live-clock" id="liveClock">--:--:--</div>
+      <div class="today-date" id="todayDate"></div>
+    </header>
+
+    <section class="card status-card" id="statusCard">
+      <div class="status-line">
+        <span class="status-label">סטטוס נוכחי:</span>
+        <span class="status-value" id="statusValue">לא בעבודה</span>
+      </div>
+      <div class="status-line" id="activeSinceLine" hidden>
+        <span class="status-label">פעיל מ:</span>
+        <span class="status-value" id="activeSince">--</span>
+      </div>
+      <div class="status-line" id="elapsedLine" hidden>
+        <span class="status-label">זמן שחלף:</span>
+        <span class="status-value" id="elapsed">00:00:00</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <label for="workType" class="label">סוג עבודה</label>
+      <input
+        type="text"
+        id="workType"
+        class="input"
+        placeholder="למשל: פיתוח, פגישות, תכנון..."
+        list="workTypeList"
+      />
+      <datalist id="workTypeList">
+        <option value="פיתוח"></option>
+        <option value="פגישות"></option>
+        <option value="תכנון"></option>
+        <option value="ניהול"></option>
+        <option value="מכירות"></option>
+        <option value="תמיכה"></option>
+      </datalist>
+
+      <div class="actions">
+        <button id="startBtn" class="btn btn-primary">▶ התחל עבודה</button>
+        <button id="stopBtn" class="btn btn-danger" disabled>■ סיים עבודה</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>רישומים להיום</h2>
+        <span class="total-pill" id="totalPill">סה"כ: 00:00:00</span>
+      </div>
+      <div class="table-wrap">
+        <table class="entries">
+          <thead>
+            <tr>
+              <th>התחלה</th>
+              <th>סיום</th>
+              <th>משך</th>
+              <th>סוג עבודה</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="entriesBody">
+            <tr class="empty"><td colspan="5">אין רישומים עדיין</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>שליחת דו"ח יומי למנכ"ל</h2>
+      <label for="ceoEmail" class="label">אימייל המנכ"ל</label>
+      <input
+        type="email"
+        id="ceoEmail"
+        class="input"
+        placeholder="ceo@company.com"
+      />
+
+      <label for="employeeName" class="label">שם העובד</label>
+      <input
+        type="text"
+        id="employeeName"
+        class="input"
+        placeholder="שם מלא"
+      />
+
+      <div class="actions">
+        <button id="sendBtn" class="btn btn-success">📧 שלח דו"ח למנכ"ל</button>
+        <button id="previewBtn" class="btn btn-secondary">👁 תצוגה מקדימה</button>
+        <button id="clearBtn" class="btn btn-ghost">🗑 נקה רישומים של היום</button>
+      </div>
+      <p class="hint">
+        בלחיצה על "שלח דו"ח" ייפתח חלון המייל המוגדר במחשב עם הטבלה מוכנה לשליחה.
+      </p>
+    </section>
+
+    <section class="card history-card">
+      <div class="card-header">
+        <h2>היסטוריה</h2>
+        <button id="exportBtn" class="btn btn-secondary small">⬇ ייצוא CSV</button>
+      </div>
+      <div id="history" class="history"></div>
+    </section>
+
+    <div id="previewModal" class="modal" hidden>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>תצוגה מקדימה של הדו"ח</h3>
+          <button class="modal-close" id="modalClose">✕</button>
+        </div>
+        <div id="previewBody" class="modal-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
