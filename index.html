@@ -30,22 +30,33 @@
     </section>
 
     <section class="card">
-      <label for="workType" class="label">סוג עבודה</label>
+      <label class="label">סוג עבודה</label>
+      <div class="work-types" id="workTypes" role="radiogroup" aria-label="סוג עבודה">
+        <button type="button" class="work-type-btn" data-type="גזירים" role="radio" aria-checked="false">
+          <span class="wt-icon">✂️</span>
+          <span class="wt-label">גזירים</span>
+        </button>
+        <button type="button" class="work-type-btn" data-type="הקלדות" role="radio" aria-checked="false">
+          <span class="wt-icon">⌨️</span>
+          <span class="wt-label">הקלדות</span>
+        </button>
+        <button type="button" class="work-type-btn" data-type="זומים / שיחות עבודה" role="radio" aria-checked="false">
+          <span class="wt-icon">📞</span>
+          <span class="wt-label">זומים / שיחות עבודה</span>
+        </button>
+        <button type="button" class="work-type-btn" data-type="כתיבת כתבות" role="radio" aria-checked="false">
+          <span class="wt-icon">📝</span>
+          <span class="wt-label">כתיבת כתבות</span>
+        </button>
+      </div>
+
+      <label for="workNote" class="label">הערה / פירוט (לא חובה)</label>
       <input
         type="text"
-        id="workType"
+        id="workNote"
         class="input"
-        placeholder="למשל: פיתוח, פגישות, תכנון..."
-        list="workTypeList"
+        placeholder="פרטים נוספים על המשימה..."
       />
-      <datalist id="workTypeList">
-        <option value="פיתוח"></option>
-        <option value="פגישות"></option>
-        <option value="תכנון"></option>
-        <option value="ניהול"></option>
-        <option value="מכירות"></option>
-        <option value="תמיכה"></option>
-      </datalist>
 
       <div class="actions">
         <button id="startBtn" class="btn btn-primary">▶ התחל עבודה</button>
@@ -66,11 +77,12 @@
               <th>סיום</th>
               <th>משך</th>
               <th>סוג עבודה</th>
+              <th>הערה</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="entriesBody">
-            <tr class="empty"><td colspan="5">אין רישומים עדיין</td></tr>
+            <tr class="empty"><td colspan="6">אין רישומים עדיין</td></tr>
           </tbody>
         </table>
       </div>
