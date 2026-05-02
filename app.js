@@ -11,6 +11,10 @@ const STORAGE_KEYS = {
   vatPercent: 'attendance:vatPercent',
   dailyNotes: 'attendance:dailyNotes',
   installDismissed: 'attendance:installDismissed',
+  notificationsEnabled: 'attendance:notificationsEnabled',
+  lastReminderDay: 'attendance:lastReminderDay',
+  lastMonthlyReminder: 'attendance:lastMonthlyReminder',
+  welcomeDone: 'attendance:welcomeDone',
 };
 
 const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -32,16 +36,12 @@ const $ = (id) => document.getElementById(id);
 const els = {
   liveClock: $('liveClock'),
   todayDate: $('todayDate'),
-  statusValue: $('statusValue'),
-  activeSinceLine: $('activeSinceLine'),
-  activeSince: $('activeSince'),
-  elapsedLine: $('elapsedLine'),
-  elapsed: $('elapsed'),
+  statusHeadline: $('statusHeadline'),
+  statusDetail: $('statusDetail'),
   workTypes: $('workTypes'),
   startBtn: $('startBtn'),
   stopBtn: $('stopBtn'),
   summaryBody: $('summaryBody'),
-  entriesBody: $('entriesBody'),
   totalPill: $('totalPill'),
   dailyNotes: $('dailyNotes'),
   ceoEmail: $('ceoEmail'),
@@ -51,18 +51,26 @@ const els = {
   hourlyRate: $('hourlyRate'),
   vatPercent: $('vatPercent'),
   sendBtn: $('sendBtn'),
-  downloadBtn: $('downloadBtn'),
+  downloadDailyBtn: $('downloadDailyBtn'),
   previewBtn: $('previewBtn'),
   monthSelect: $('monthSelect'),
   monthSummary: $('monthSummary'),
   sendMonthBtn: $('sendMonthBtn'),
   downloadMonthBtn: $('downloadMonthBtn'),
   previewMonthBtn: $('previewMonthBtn'),
+  printInvoiceBtn: $('printInvoiceBtn'),
   clearBtn: $('clearBtn'),
   installBanner: $('installBanner'),
   installBtn: $('installBtn'),
   installDismiss: $('installDismiss'),
   history: $('history'),
+  notificationsEnabled: $('notificationsEnabled'),
+  notificationsHint: $('notificationsHint'),
+  welcomeModal: $('welcomeModal'),
+  welcomeName: $('welcomeName'),
+  welcomeCeo: $('welcomeCeo'),
+  welcomeRate: $('welcomeRate'),
+  welcomeSave: $('welcomeSave'),
   quantityModal: $('quantityModal'),
   quantityTitle: $('quantityTitle'),
   quantityFields: $('quantityFields'),
@@ -392,16 +400,15 @@ function categoryQtyText(s) {
 function renderStatus() {
   if (activeSession) {
     const cat = CAT_BY_KEY[activeSession.workType];
-    els.statusValue.textContent = `בעבודה: ${cat ? cat.icon + ' ' + cat.label : activeSession.workType}`;
-    els.statusValue.classList.add('active');
-    els.activeSince.textContent = formatHM(activeSession.startTs);
-    els.activeSinceLine.hidden = false;
-    els.elapsedLine.hidden = false;
+    const label = cat ? `${cat.icon} ${cat.label}` : activeSession.workType;
+    els.statusHeadline.textContent = `בעבודה: ${label}`;
+    els.statusHeadline.classList.add('active');
+    const elapsed = Date.now() - activeSession.startTs;
+    els.statusDetail.textContent = `החל מ-${formatHM(activeSession.startTs)} · ${formatDuration(elapsed)}`;
   } else {
-    els.statusValue.textContent = 'לא בעבודה';
-    els.statusValue.classList.remove('active');
-    els.activeSinceLine.hidden = true;
-    els.elapsedLine.hidden = true;
+    els.statusHeadline.textContent = 'לא בעבודה';
+    els.statusHeadline.classList.remove('active');
+    els.statusDetail.textContent = 'בחרי סוג עבודה ולחצי "התחל"';
   }
 }
 
@@ -431,7 +438,6 @@ function renderSummary() {
     }
 
     const qtyText = categoryQtyText(s);
-    const notesText = s.notes.join(' · ');
 
     rows.push(`
       <tr class="${hasData ? '' : 'empty-row'}">
@@ -440,7 +446,6 @@ function renderSummary() {
         <td>${endLabel}</td>
         <td>${durLabel}</td>
         <td>${escapeHtml(qtyText) || '—'}</td>
-        <td>${escapeHtml(notesText) || '—'}</td>
       </tr>
     `);
   });
@@ -448,55 +453,7 @@ function renderSummary() {
   els.summaryBody.innerHTML = rows.join('');
 
   const liveMs = activeSession ? Date.now() - activeSession.startTs : 0;
-  els.totalPill.textContent = `סה"כ שעות: ${formatHoursDecimal(totalMs + liveMs)}`;
-}
-
-function renderEntries() {
-  const today = entriesForDay(todayKey());
-  const rows = [];
-
-  today.forEach((e) => {
-    const cat = CAT_BY_KEY[e.workType];
-    const dur = formatDuration(e.endTs - e.startTs);
-    const qtyParts = [];
-    if (e.qty?.count != null) qtyParts.push(`${e.qty.count}`);
-    if (e.qty?.words != null) qtyParts.push(`${e.qty.words} מילים`);
-    rows.push(`
-      <tr>
-        <td>${cat ? cat.icon : ''} ${escapeHtml(e.workType)}</td>
-        <td>${formatHM(e.startTs)}</td>
-        <td>${formatHM(e.endTs)}</td>
-        <td>${dur}</td>
-        <td>${qtyParts.join(', ') || '—'}</td>
-        <td>${escapeHtml(e.note || '')}</td>
-        <td><button class="delete-btn" data-del="${e.id}" title="מחק">🗑</button></td>
-      </tr>
-    `);
-  });
-
-  if (activeSession) {
-    const cat = CAT_BY_KEY[activeSession.workType];
-    rows.push(`
-      <tr class="active-row">
-        <td>${cat ? cat.icon : ''} ${escapeHtml(activeSession.workType)}</td>
-        <td>${formatHM(activeSession.startTs)}</td>
-        <td>—</td>
-        <td>פעיל...</td>
-        <td>—</td>
-        <td>—</td>
-        <td></td>
-      </tr>
-    `);
-  }
-
-  if (rows.length === 0) {
-    els.entriesBody.innerHTML = '<tr class="empty"><td colspan="7">אין רישומים עדיין</td></tr>';
-  } else {
-    els.entriesBody.innerHTML = rows.join('');
-    els.entriesBody.querySelectorAll('[data-del]').forEach((btn) => {
-      btn.addEventListener('click', () => deleteEntry(btn.dataset.del));
-    });
-  }
+  els.totalPill.textContent = `סה"כ: ${formatHoursDecimal(totalMs + liveMs)} ש׳`;
 }
 
 function renderHistory() {
@@ -535,7 +492,6 @@ function renderHistory() {
 function renderAll() {
   renderStatus();
   renderSummary();
-  renderEntries();
   renderHistory();
 }
 
@@ -684,26 +640,6 @@ function downloadDailyReport() {
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = `attendance-${todayKey()}.csv`;
-  link.click();
-  URL.revokeObjectURL(link.href);
-}
-
-function exportMonth() {
-  const allDays = [...new Set(entries.map((e) => dateKey(e.startTs)))].sort();
-  if (allDays.length === 0) {
-    alert('אין נתונים לייצוא.');
-    return;
-  }
-  const rows = allDays.map((k) => {
-    const r = buildReportRow(k);
-    r.__dKey = k;
-    return r;
-  });
-  const csv = buildReportCSV(rows, true);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `attendance-full-${todayKey()}.csv`;
   link.click();
   URL.revokeObjectURL(link.href);
 }
@@ -1128,6 +1064,267 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+// ---------- First-run welcome ----------
+function maybeShowWelcome() {
+  const done = localStorage.getItem(STORAGE_KEYS.welcomeDone) === '1';
+  const hasName = !!els.employeeName.value.trim();
+  if (done || hasName) return;
+  els.welcomeModal.hidden = false;
+  setTimeout(() => els.welcomeName.focus(), 100);
+}
+
+function saveWelcome() {
+  const name = els.welcomeName.value.trim();
+  const ceo = els.welcomeCeo.value.trim();
+  const rate = els.welcomeRate.value.trim();
+
+  if (!name) {
+    alert('יש להזין שם.');
+    els.welcomeName.focus();
+    return;
+  }
+
+  els.employeeName.value = name;
+  if (ceo) els.ceoEmail.value = ceo;
+  if (rate) els.hourlyRate.value = rate;
+
+  saveAllSettings();
+  localStorage.setItem(STORAGE_KEYS.welcomeDone, '1');
+  els.welcomeModal.hidden = true;
+  renderMonthSummary();
+}
+
+// ---------- Print invoice ----------
+function buildInvoiceHTML(mKey) {
+  const sm = summarizeMonth(mKey);
+  const rows = getReportRowsForMonth(mKey);
+  const employee = els.employeeName.value.trim() || '(לא צוין)';
+  const employeeId = els.employeeId.value.trim();
+  const monthLabel = formatHebrewMonth(mKey);
+  const today = formatHebrewDate(Date.now());
+
+  const headerCells = REPORT_HEADERS.map((h) => `<th>${escapeHtml(h)}</th>`).join('');
+  const tableRows = rows.map((row) =>
+    '<tr>' + REPORT_HEADERS.map((h) => `<td>${escapeHtml(row[h] || '')}</td>`).join('') + '</tr>'
+  ).join('');
+
+  const catRows = CATEGORIES.map((c) => {
+    const cs = sm.byCategory[c.key];
+    if (cs.totalMs === 0) return '';
+    const qty = [];
+    if (cs.count) qty.push(`${cs.count}`);
+    if (cs.words) qty.push(`${cs.words} מילים`);
+    return `<tr><td>${c.icon} ${escapeHtml(c.label)}</td><td>${formatHoursDecimal(cs.totalMs)} ש׳</td><td>${qty.join(', ') || '—'}</td></tr>`;
+  }).filter(Boolean).join('');
+
+  const paymentSection = sm.hourlyRate > 0 ? `
+    <h2>חישוב לתשלום</h2>
+    <table class="totals">
+      <tr><td>סה"כ שעות</td><td>${formatHoursDecimal(sm.totalMs)} שעות</td></tr>
+      <tr><td>תעריף שעתי</td><td>${sm.hourlyRate.toFixed(2)} ₪</td></tr>
+      <tr><td>סכום לפני מע"מ</td><td>${formatMoney(sm.subtotal)}</td></tr>
+      ${sm.vatPercent > 0 ? `<tr><td>מע"מ ${sm.vatPercent}%</td><td>${formatMoney(sm.vatAmount)}</td></tr>` : ''}
+      <tr class="grand-total"><td>סכום לתשלום (כולל מע"מ)</td><td>${formatMoney(sm.grandTotal)}</td></tr>
+    </table>
+  ` : '<p style="color:#888;">לחישוב תשלום הזיני תעריף שעתי בהגדרות.</p>';
+
+  return `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>חשבונית — ${escapeHtml(employee)} — ${escapeHtml(monthLabel)}</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    body { font-family: 'Heebo', 'Arial', sans-serif; color: #1e293b; direction: rtl; line-height: 1.5; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #1e40af; }
+    .header h1 { color: #1e40af; margin: 0; font-size: 26px; }
+    .header .meta { text-align: left; font-size: 13px; color: #64748b; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; padding: 12px; background: #f1f5f9; border-radius: 8px; }
+    .info-grid div { font-size: 14px; }
+    .info-grid strong { color: #1e40af; }
+    h2 { color: #1e40af; margin-top: 24px; margin-bottom: 10px; font-size: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+    th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; vertical-align: top; }
+    th { background: #1e40af; color: white; font-weight: 600; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    table.totals { font-size: 14px; }
+    table.totals td:first-child { width: 60%; color: #475569; }
+    table.totals td:last-child { text-align: left; font-weight: 600; }
+    table.totals tr.grand-total td { background: #10b981 !important; color: white; font-size: 17px; padding: 12px; border-color: #10b981; }
+    .signature { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+    .signature div { border-top: 1px solid #1e293b; padding-top: 6px; font-size: 12px; color: #64748b; text-align: center; }
+    .actions { margin: 20px 0; text-align: center; }
+    .actions button { padding: 12px 24px; font-size: 16px; background: #1e40af; color: white; border: none; border-radius: 8px; cursor: pointer; margin: 0 4px; }
+    @media print { .actions { display: none; } body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="actions no-print">
+    <button onclick="window.print()">🖨 הדפסה / שמירה כ-PDF</button>
+    <button onclick="window.close()">סגור</button>
+  </div>
+
+  <div class="header">
+    <h1>חשבונית — דו"ח שעות</h1>
+    <div class="meta">הופק בתאריך: ${escapeHtml(today)}</div>
+  </div>
+
+  <div class="info-grid">
+    <div><strong>שם העובד:</strong> ${escapeHtml(employee)}</div>
+    ${employeeId ? `<div><strong>ת.ז. / מס׳ עוסק:</strong> ${escapeHtml(employeeId)}</div>` : '<div></div>'}
+    <div><strong>חודש דיווח:</strong> ${escapeHtml(monthLabel)}</div>
+    <div><strong>ימי עבודה:</strong> ${sm.daysCount}</div>
+  </div>
+
+  <h2>פירוט יומי</h2>
+  <table>
+    <thead><tr>${headerCells}</tr></thead>
+    <tbody>${tableRows || '<tr><td colspan="' + REPORT_HEADERS.length + '">אין נתונים</td></tr>'}</tbody>
+  </table>
+
+  <h2>סיכום לפי קטגוריה</h2>
+  <table>
+    <thead><tr><th>קטגוריה</th><th>שעות</th><th>כמות</th></tr></thead>
+    <tbody>${catRows || '<tr><td colspan="3">אין נתונים</td></tr>'}</tbody>
+  </table>
+
+  ${paymentSection}
+
+  <div class="signature">
+    <div>חתימת העובד</div>
+    <div>אישור המנכ"ל</div>
+  </div>
+
+  <script>
+    setTimeout(() => window.print(), 400);
+  </script>
+</body>
+</html>`;
+}
+
+function printInvoice() {
+  const mKey = els.monthSelect.value || currentMonthKey();
+  const sm = summarizeMonth(mKey);
+  if (sm.daysCount === 0) {
+    alert('אין רישומים לחודש שנבחר.');
+    return;
+  }
+  const html = buildInvoiceHTML(mKey);
+  const w = window.open('', '_blank', 'width=900,height=700');
+  if (!w) {
+    alert('הדפדפן חסם את פתיחת החלון. יש לאשר חלונות קופצים מהאתר.');
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+// ---------- Notifications / reminders ----------
+function notificationsEnabled() {
+  return localStorage.getItem(STORAGE_KEYS.notificationsEnabled) === '1';
+}
+
+function canNotify() {
+  return 'Notification' in window && Notification.permission === 'granted';
+}
+
+function notify(title, body, tag) {
+  if (!canNotify()) return;
+  try {
+    new Notification(title, {
+      body,
+      tag,
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-192.png',
+      lang: 'he',
+      dir: 'rtl',
+    });
+  } catch {}
+}
+
+async function toggleNotifications(enabled) {
+  if (!('Notification' in window)) {
+    alert('הדפדפן לא תומך בהתראות.');
+    els.notificationsEnabled.checked = false;
+    return;
+  }
+  if (enabled) {
+    if (Notification.permission === 'default') {
+      const result = await Notification.requestPermission();
+      if (result !== 'granted') {
+        els.notificationsEnabled.checked = false;
+        alert('כדי לקבל התראות יש לאשר את ההרשאה בדפדפן.');
+        return;
+      }
+    } else if (Notification.permission === 'denied') {
+      els.notificationsEnabled.checked = false;
+      alert('ההתראות חסומות בדפדפן. יש לאשר אותן בהגדרות הדפדפן.');
+      return;
+    }
+    localStorage.setItem(STORAGE_KEYS.notificationsEnabled, '1');
+    notify('🔔 התראות מופעלות', 'תקבלי הזכרה בסוף יום ובסוף חודש.', 'init');
+  } else {
+    localStorage.setItem(STORAGE_KEYS.notificationsEnabled, '0');
+  }
+}
+
+function checkReminders() {
+  if (!notificationsEnabled() || !canNotify()) return;
+  const now = new Date();
+  const tk = todayKey();
+  const mKey = currentMonthKey();
+
+  // End-of-day reminder if user is still clocked in at 18:00+
+  if (now.getHours() >= 18 && activeSession) {
+    const lastDay = localStorage.getItem(STORAGE_KEYS.lastReminderDay);
+    if (lastDay !== tk) {
+      notify('⏱ שכחת לסמן סיום?', 'יש סשן עבודה פעיל שעדיין לא נסגר. אל תשכחי ללחוץ "סיים עבודה".', 'eod');
+      localStorage.setItem(STORAGE_KEYS.lastReminderDay, tk);
+    }
+  }
+
+  // Last day of month reminder at 17:00+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const isLastDayOfMonth = tomorrow.getMonth() !== now.getMonth();
+  if (isLastDayOfMonth && now.getHours() >= 17) {
+    const last = localStorage.getItem(STORAGE_KEYS.lastMonthlyReminder);
+    if (last !== mKey) {
+      const sm = summarizeMonth(mKey);
+      if (sm.daysCount > 0) {
+        notify(
+          '📊 סוף החודש',
+          `החודש ${formatHebrewMonth(mKey)} מסתיים. סה"כ ${formatHoursDecimal(sm.totalMs)} שעות. אל תשכחי לשלוח את הדו"ח החודשי.`,
+          'eom'
+        );
+        localStorage.setItem(STORAGE_KEYS.lastMonthlyReminder, mKey);
+      }
+    }
+  }
+}
+
+function setupNotifications() {
+  els.notificationsEnabled.checked = notificationsEnabled();
+  els.notificationsEnabled.addEventListener('change', () => {
+    toggleNotifications(els.notificationsEnabled.checked);
+  });
+
+  // Check immediately and every 5 minutes
+  checkReminders();
+  setInterval(checkReminders, 5 * 60 * 1000);
+
+  // Update hint text based on permission state
+  if ('Notification' in window) {
+    if (Notification.permission === 'denied') {
+      els.notificationsHint.textContent = '⚠ ההתראות חסומות בדפדפן. יש לאשר אותן בהגדרות הדפדפן.';
+    }
+  } else {
+    els.notificationsHint.textContent = '⚠ הדפדפן לא תומך בהתראות.';
+    els.notificationsEnabled.disabled = true;
+  }
+}
+
 // ---------- PWA install ----------
 let deferredInstallPrompt = null;
 
@@ -1196,13 +1393,15 @@ function init() {
   els.startBtn.addEventListener('click', startWork);
   els.stopBtn.addEventListener('click', stopWork);
   els.sendBtn.addEventListener('click', sendReport);
-  els.downloadBtn.addEventListener('click', downloadDailyReport);
+  els.downloadDailyBtn.addEventListener('click', downloadDailyReport);
   els.previewBtn.addEventListener('click', previewReport);
   els.sendMonthBtn.addEventListener('click', sendMonthReport);
   els.downloadMonthBtn.addEventListener('click', downloadMonthReport);
   els.previewMonthBtn.addEventListener('click', previewMonthReport);
+  els.printInvoiceBtn.addEventListener('click', printInvoice);
   els.monthSelect.addEventListener('change', renderMonthSummary);
   els.clearBtn.addEventListener('click', clearToday);
+  els.welcomeSave.addEventListener('click', saveWelcome);
 
   els.modalClose.addEventListener('click', () => { els.previewModal.hidden = true; });
   els.previewModal.addEventListener('click', (e) => {
@@ -1249,7 +1448,9 @@ function init() {
   setInterval(() => { if (activeSession) renderSummary(); }, 1000);
 
   setupInstall();
+  setupNotifications();
   registerServiceWorker();
+  maybeShowWelcome();
 }
 
 document.addEventListener('DOMContentLoaded', init);

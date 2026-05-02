@@ -11,13 +11,13 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <title>שעון נוכחות יומי</title>
+  <title>שעון נוכחות</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
     <div id="installBanner" class="install-banner" hidden>
-      <span>📱 התקיני את האפליקציה במכשיר שלך לגישה מהירה</span>
+      <span>📱 התקיני את האפליקציה במכשיר לגישה מהירה</span>
       <div>
         <button id="installBtn" class="btn btn-primary small">התקנה</button>
         <button id="installDismiss" class="btn btn-ghost small">לא עכשיו</button>
@@ -30,23 +30,13 @@
       <div class="today-date" id="todayDate"></div>
     </header>
 
-    <section class="card status-card" id="statusCard">
-      <div class="status-line">
-        <span class="status-label">סטטוס נוכחי:</span>
-        <span class="status-value" id="statusValue">לא בעבודה</span>
-      </div>
-      <div class="status-line" id="activeSinceLine" hidden>
-        <span class="status-label">פעיל מ:</span>
-        <span class="status-value" id="activeSince">--</span>
-      </div>
-      <div class="status-line" id="elapsedLine" hidden>
-        <span class="status-label">זמן שחלף:</span>
-        <span class="status-value" id="elapsed">00:00:00</span>
-      </div>
+    <section class="card big-status" id="statusCard">
+      <div class="status-headline" id="statusHeadline">לא בעבודה</div>
+      <div class="status-detail" id="statusDetail"></div>
     </section>
 
     <section class="card">
-      <label class="label">סוג עבודה</label>
+      <h2 class="section-title">בחרי סוג עבודה והתחילי</h2>
       <div class="work-types" id="workTypes" role="radiogroup" aria-label="סוג עבודה">
         <button type="button" class="work-type-btn" data-type="גזירים" role="radio" aria-checked="false">
           <span class="wt-icon">✂️</span>
@@ -66,16 +56,16 @@
         </button>
       </div>
 
-      <div class="actions">
-        <button id="startBtn" class="btn btn-primary">▶ התחל עבודה</button>
-        <button id="stopBtn" class="btn btn-danger" disabled>■ סיים עבודה</button>
+      <div class="actions main-actions">
+        <button id="startBtn" class="btn btn-primary big">▶ התחל עבודה</button>
+        <button id="stopBtn" class="btn btn-danger big" disabled>■ סיים עבודה</button>
       </div>
     </section>
 
     <section class="card">
       <div class="card-header">
-        <h2>סיכום יומי</h2>
-        <span class="total-pill" id="totalPill">סה"כ שעות: 0.00</span>
+        <h2 class="section-title">היום שלך</h2>
+        <span class="total-pill" id="totalPill">סה"כ: 0.00 ש'</span>
       </div>
       <div class="table-wrap">
         <table class="daily-summary">
@@ -84,150 +74,129 @@
               <th>קטגוריה</th>
               <th>התחלה</th>
               <th>סיום</th>
-              <th>משך</th>
+              <th>שעות</th>
               <th>כמות</th>
-              <th>הערות</th>
             </tr>
           </thead>
           <tbody id="summaryBody"></tbody>
         </table>
       </div>
 
-      <details class="sessions-details">
-        <summary>הצג רישומים מפורטים ליום (סשנים בודדים)</summary>
-        <div class="table-wrap">
-          <table class="entries">
-            <thead>
-              <tr>
-                <th>קטגוריה</th>
-                <th>התחלה</th>
-                <th>סיום</th>
-                <th>משך</th>
-                <th>כמות</th>
-                <th>הערה</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="entriesBody">
-              <tr class="empty"><td colspan="7">אין רישומים עדיין</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </details>
-
-      <label for="dailyNotes" class="label">הערות יומיות</label>
-      <textarea
-        id="dailyNotes"
-        class="input textarea"
-        rows="2"
-        placeholder="הערות כלליות ליום (לא חובה)"
-      ></textarea>
-    </section>
-
-    <section class="card">
-      <h2>שליחת דו"ח יומי</h2>
-
-      <div class="actions">
-        <button id="sendBtn" class="btn btn-success">📧 שלח דו"ח למנכ"ל</button>
-        <button id="downloadBtn" class="btn btn-primary">⬇ הורד דו"ח יומי</button>
-        <button id="previewBtn" class="btn btn-secondary">👁 תצוגה מקדימה</button>
+      <div class="actions main-actions">
+        <button id="sendBtn" class="btn btn-success big">📧 שלח דו"ח יומי למנכ"ל</button>
       </div>
-      <p class="hint">
-        ההורדה תייצא קובץ CSV בפורמט הטבלה. השליחה למנכ"ל תפתח את תוכנת הדואר עם טבלה מעוצבת כתוכן המייל.
-      </p>
+      <button id="previewBtn" class="link-btn">👁 הצג תצוגה מקדימה</button>
     </section>
 
     <section class="card monthly-card">
-      <h2>📊 דו"ח חודשי להנהלת חשבונות</h2>
+      <h2 class="section-title">📊 דו"ח חודשי לתשלום</h2>
 
       <div class="month-controls">
-        <label for="monthSelect" class="label">בחירת חודש</label>
-        <input type="month" id="monthSelect" class="input" />
+        <input type="month" id="monthSelect" class="input big-input" />
       </div>
 
       <div id="monthSummary" class="month-summary"></div>
 
+      <div class="actions main-actions">
+        <button id="sendMonthBtn" class="btn btn-success big">📧 שלח דו"ח חודשי</button>
+        <button id="printInvoiceBtn" class="btn btn-primary big">🖨 חשבונית להדפסה / PDF</button>
+      </div>
       <div class="actions">
-        <button id="sendMonthBtn" class="btn btn-success">📧 שלח דו"ח חודשי למנכ"ל</button>
-        <button id="downloadMonthBtn" class="btn btn-primary">⬇ הורד דו"ח חודשי (CSV)</button>
-        <button id="previewMonthBtn" class="btn btn-secondary">👁 תצוגה מקדימה</button>
+        <button id="downloadMonthBtn" class="link-btn">⬇ הורד CSV להנהלת חשבונות</button>
+        <button id="previewMonthBtn" class="link-btn">👁 תצוגה מקדימה</button>
       </div>
-      <p class="hint">
-        הדו"ח החודשי כולל את כל הימים, סיכום שעות לפי קטגוריה, וחישוב סכום לתשלום (כולל מע"מ) להעברה להנהלת חשבונות.
-      </p>
     </section>
 
-    <section class="card">
-      <h2>⚙ הגדרות</h2>
+    <details class="card collapsible-card">
+      <summary class="collapsible-summary">
+        ⚙ הגדרות נוספות וניהול
+      </summary>
+      <div class="collapsible-body">
+        <h3>הפרטים שלך</h3>
+        <label for="employeeName" class="label">שם מלא</label>
+        <input type="text" id="employeeName" class="input" placeholder="שם מלא" />
 
-      <label for="employeeName" class="label">שם העובד</label>
-      <input
-        type="text"
-        id="employeeName"
-        class="input"
-        placeholder="שם מלא"
-      />
+        <label for="employeeId" class="label">ת.ז. / מס׳ עוסק</label>
+        <input type="text" id="employeeId" class="input" placeholder="123456789" />
 
-      <label for="employeeId" class="label">ת.ז. / מס׳ עוסק (לחשבונית)</label>
-      <input
-        type="text"
-        id="employeeId"
-        class="input"
-        placeholder="לדוגמה: 123456789"
-      />
+        <label for="ceoEmail" class="label">אימייל המנכ"ל</label>
+        <input type="email" id="ceoEmail" class="input" placeholder="ceo@company.com" />
 
-      <label for="ceoEmail" class="label">אימייל המנכ"ל</label>
-      <input
-        type="email"
-        id="ceoEmail"
-        class="input"
-        placeholder="ceo@company.com"
-      />
+        <label for="accountingEmail" class="label">אימייל הנהלת חשבונות (אופציונלי)</label>
+        <input type="email" id="accountingEmail" class="input" placeholder="accounting@company.com" />
 
-      <label for="accountingEmail" class="label">אימייל הנהלת חשבונות (אופציונלי)</label>
-      <input
-        type="email"
-        id="accountingEmail"
-        class="input"
-        placeholder="accounting@company.com"
-      />
-
-      <div class="settings-grid">
-        <div>
-          <label for="hourlyRate" class="label">תעריף שעתי (₪)</label>
-          <input
-            type="number"
-            id="hourlyRate"
-            class="input"
-            min="0"
-            step="0.01"
-            placeholder="לדוגמה: 60"
-          />
+        <div class="settings-grid">
+          <div>
+            <label for="hourlyRate" class="label">תעריף שעתי (₪)</label>
+            <input type="number" id="hourlyRate" class="input" min="0" step="0.01" placeholder="60" />
+          </div>
+          <div>
+            <label for="vatPercent" class="label">מע"מ (%)</label>
+            <input type="number" id="vatPercent" class="input" min="0" step="0.01" placeholder="18" />
+          </div>
         </div>
-        <div>
-          <label for="vatPercent" class="label">מע"מ (%)</label>
-          <input
-            type="number"
-            id="vatPercent"
-            class="input"
-            min="0"
-            step="0.01"
-            placeholder="לדוגמה: 18"
-          />
+
+        <h3 style="margin-top: 20px;">הערות והתראות</h3>
+
+        <label for="dailyNotes" class="label">הערה ליום הנוכחי (לא חובה)</label>
+        <textarea
+          id="dailyNotes"
+          class="input textarea"
+          rows="2"
+          placeholder="הערות כלליות ליום"
+        ></textarea>
+
+        <div class="toggle-row">
+          <label for="notificationsEnabled">🔔 הזכר לי בסוף יום ובסוף חודש</label>
+          <label class="switch">
+            <input type="checkbox" id="notificationsEnabled" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p class="hint" id="notificationsHint">
+          תקבלי הזכרה אם שכחת לסמן סיום ב-18:00, ובסוף החודש להעביר את הדו"ח.
+        </p>
+
+        <h3 style="margin-top: 20px;">היסטוריה</h3>
+        <div id="history" class="history"></div>
+
+        <h3 style="margin-top: 20px;">פעולות מתקדמות</h3>
+        <div class="actions">
+          <button id="downloadDailyBtn" class="btn btn-secondary">⬇ הורד CSV יומי</button>
+          <button id="clearBtn" class="btn btn-ghost">🗑 נקה רישומים של היום</button>
         </div>
       </div>
+    </details>
 
-      <div class="actions">
-        <button id="clearBtn" class="btn btn-ghost">🗑 נקה רישומים של היום</button>
-      </div>
-    </section>
+    <!-- Modal: First-run welcome -->
+    <div id="welcomeModal" class="modal" hidden>
+      <div class="modal-content modal-sm">
+        <div class="modal-header">
+          <h3>👋 ברוכה הבאה!</h3>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 16px;">
+            רק 3 פרטים קצרים פעם אחת ואת מוכנה:
+          </p>
 
-    <section class="card history-card">
-      <div class="card-header">
-        <h2>היסטוריה</h2>
+          <label for="welcomeName" class="label">השם שלך</label>
+          <input type="text" id="welcomeName" class="input big-input" placeholder="שם מלא" />
+
+          <label for="welcomeCeo" class="label">אימייל המנכ"ל</label>
+          <input type="email" id="welcomeCeo" class="input big-input" placeholder="ceo@company.com" />
+
+          <label for="welcomeRate" class="label">תעריף שעתי (₪) - אופציונלי</label>
+          <input type="number" id="welcomeRate" class="input big-input" min="0" step="0.01" placeholder="לדוגמה: 60" />
+
+          <div class="actions main-actions" style="margin-top: 16px;">
+            <button id="welcomeSave" class="btn btn-success big">שמור והתחל</button>
+          </div>
+          <p class="hint">
+            ניתן לשנות בכל עת מההגדרות בתחתית האפליקציה.
+          </p>
+        </div>
       </div>
-      <div id="history" class="history"></div>
-    </section>
+    </div>
 
     <!-- Modal: ask for quantity after stop -->
     <div id="quantityModal" class="modal" hidden>
@@ -238,8 +207,8 @@
         </div>
         <div class="modal-body">
           <div id="quantityFields"></div>
-          <div class="actions">
-            <button id="quantitySave" class="btn btn-success">שמור</button>
+          <div class="actions main-actions">
+            <button id="quantitySave" class="btn btn-success big">שמור</button>
             <button id="quantityCancel" class="btn btn-ghost">דלג</button>
           </div>
         </div>
