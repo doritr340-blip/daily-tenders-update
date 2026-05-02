@@ -2,12 +2,28 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e293b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="נוכחות" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <title>שעון נוכחות יומי</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
+    <div id="installBanner" class="install-banner" hidden>
+      <span>📱 התקיני את האפליקציה במכשיר שלך לגישה מהירה</span>
+      <div>
+        <button id="installBtn" class="btn btn-primary small">התקנה</button>
+        <button id="installDismiss" class="btn btn-ghost small">לא עכשיו</button>
+      </div>
+    </div>
+
     <header class="header">
       <h1>⏱ שעון נוכחות</h1>
       <div class="live-clock" id="liveClock">--:--:--</div>
@@ -109,13 +125,55 @@
     </section>
 
     <section class="card">
-      <h2>הגדרות ושליחת דו"ח</h2>
+      <h2>שליחת דו"ח יומי</h2>
+
+      <div class="actions">
+        <button id="sendBtn" class="btn btn-success">📧 שלח דו"ח למנכ"ל</button>
+        <button id="downloadBtn" class="btn btn-primary">⬇ הורד דו"ח יומי</button>
+        <button id="previewBtn" class="btn btn-secondary">👁 תצוגה מקדימה</button>
+      </div>
+      <p class="hint">
+        ההורדה תייצא קובץ CSV בפורמט הטבלה. השליחה למנכ"ל תפתח את תוכנת הדואר עם טבלה מעוצבת כתוכן המייל.
+      </p>
+    </section>
+
+    <section class="card monthly-card">
+      <h2>📊 דו"ח חודשי להנהלת חשבונות</h2>
+
+      <div class="month-controls">
+        <label for="monthSelect" class="label">בחירת חודש</label>
+        <input type="month" id="monthSelect" class="input" />
+      </div>
+
+      <div id="monthSummary" class="month-summary"></div>
+
+      <div class="actions">
+        <button id="sendMonthBtn" class="btn btn-success">📧 שלח דו"ח חודשי למנכ"ל</button>
+        <button id="downloadMonthBtn" class="btn btn-primary">⬇ הורד דו"ח חודשי (CSV)</button>
+        <button id="previewMonthBtn" class="btn btn-secondary">👁 תצוגה מקדימה</button>
+      </div>
+      <p class="hint">
+        הדו"ח החודשי כולל את כל הימים, סיכום שעות לפי קטגוריה, וחישוב סכום לתשלום (כולל מע"מ) להעברה להנהלת חשבונות.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>⚙ הגדרות</h2>
+
       <label for="employeeName" class="label">שם העובד</label>
       <input
         type="text"
         id="employeeName"
         class="input"
         placeholder="שם מלא"
+      />
+
+      <label for="employeeId" class="label">ת.ז. / מס׳ עוסק (לחשבונית)</label>
+      <input
+        type="text"
+        id="employeeId"
+        class="input"
+        placeholder="לדוגמה: 123456789"
       />
 
       <label for="ceoEmail" class="label">אימייל המנכ"ל</label>
@@ -126,18 +184,42 @@
         placeholder="ceo@company.com"
       />
 
-      <div class="actions">
-        <button id="sendBtn" class="btn btn-success">📧 שלח דו"ח למנכ"ל</button>
-        <button id="downloadBtn" class="btn btn-primary">⬇ הורד דו"ח יומי</button>
-        <button id="previewBtn" class="btn btn-secondary">👁 תצוגה מקדימה</button>
+      <label for="accountingEmail" class="label">אימייל הנהלת חשבונות (אופציונלי)</label>
+      <input
+        type="email"
+        id="accountingEmail"
+        class="input"
+        placeholder="accounting@company.com"
+      />
+
+      <div class="settings-grid">
+        <div>
+          <label for="hourlyRate" class="label">תעריף שעתי (₪)</label>
+          <input
+            type="number"
+            id="hourlyRate"
+            class="input"
+            min="0"
+            step="0.01"
+            placeholder="לדוגמה: 60"
+          />
+        </div>
+        <div>
+          <label for="vatPercent" class="label">מע"מ (%)</label>
+          <input
+            type="number"
+            id="vatPercent"
+            class="input"
+            min="0"
+            step="0.01"
+            placeholder="לדוגמה: 18"
+          />
+        </div>
       </div>
+
       <div class="actions">
-        <button id="exportMonthBtn" class="btn btn-secondary">⬇ ייצוא חודש מלא (CSV)</button>
         <button id="clearBtn" class="btn btn-ghost">🗑 נקה רישומים של היום</button>
       </div>
-      <p class="hint">
-        ההורדה תייצא קובץ CSV בפורמט הטבלה. השליחה למנכ"ל תפתח את תוכנת הדואר עם הטבלה כתוכן המייל.
-      </p>
     </section>
 
     <section class="card history-card">

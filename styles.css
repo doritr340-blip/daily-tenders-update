@@ -519,6 +519,115 @@ body {
   font-size: 13px;
 }
 
+.install-banner {
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+
+.install-banner > div {
+  display: flex;
+  gap: 6px;
+}
+
+.install-banner .btn {
+  flex: 0;
+  min-width: auto;
+}
+
+.install-banner .btn-ghost {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.install-banner .btn-ghost:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: white;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.monthly-card {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.month-controls {
+  margin-bottom: 16px;
+}
+
+.month-summary {
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.month-summary .summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.month-summary .summary-row:last-child {
+  border-bottom: none;
+}
+
+.month-summary .summary-row.total {
+  font-weight: 700;
+  font-size: 16px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 2px solid var(--primary);
+  color: var(--primary);
+}
+
+.month-summary .summary-row.payment {
+  background: rgba(16, 185, 129, 0.1);
+  margin: 8px -16px -16px;
+  padding: 16px;
+  border-radius: 0 0 12px 12px;
+  border-bottom: none;
+  border-top: 1px solid var(--success);
+  color: var(--success);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.month-summary .summary-label {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.month-summary .summary-value {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.month-summary .empty-state {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 8px;
+}
+
 @media (max-width: 600px) {
   body { padding: 12px; }
   .header h1 { font-size: 22px; }
@@ -526,4 +635,15 @@ body {
   .btn { font-size: 14px; padding: 10px 14px; }
   .entries { font-size: 13px; }
   .entries th, .entries td { padding: 8px 6px; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .install-banner { flex-direction: column; align-items: stretch; text-align: center; }
+}
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
 }

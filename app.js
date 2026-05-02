@@ -4,8 +4,13 @@ const STORAGE_KEYS = {
   entries: 'attendance:entries',
   active: 'attendance:active',
   ceoEmail: 'attendance:ceoEmail',
+  accountingEmail: 'attendance:accountingEmail',
   employeeName: 'attendance:employeeName',
+  employeeId: 'attendance:employeeId',
+  hourlyRate: 'attendance:hourlyRate',
+  vatPercent: 'attendance:vatPercent',
   dailyNotes: 'attendance:dailyNotes',
+  installDismissed: 'attendance:installDismissed',
 };
 
 const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -40,12 +45,23 @@ const els = {
   totalPill: $('totalPill'),
   dailyNotes: $('dailyNotes'),
   ceoEmail: $('ceoEmail'),
+  accountingEmail: $('accountingEmail'),
   employeeName: $('employeeName'),
+  employeeId: $('employeeId'),
+  hourlyRate: $('hourlyRate'),
+  vatPercent: $('vatPercent'),
   sendBtn: $('sendBtn'),
   downloadBtn: $('downloadBtn'),
   previewBtn: $('previewBtn'),
-  exportMonthBtn: $('exportMonthBtn'),
+  monthSelect: $('monthSelect'),
+  monthSummary: $('monthSummary'),
+  sendMonthBtn: $('sendMonthBtn'),
+  downloadMonthBtn: $('downloadMonthBtn'),
+  previewMonthBtn: $('previewMonthBtn'),
   clearBtn: $('clearBtn'),
+  installBanner: $('installBanner'),
+  installBtn: $('installBtn'),
+  installDismiss: $('installDismiss'),
   history: $('history'),
   quantityModal: $('quantityModal'),
   quantityTitle: $('quantityTitle'),
@@ -71,8 +87,38 @@ function loadAll() {
   catch { activeSession = null; }
 
   els.ceoEmail.value = localStorage.getItem(STORAGE_KEYS.ceoEmail) || '';
+  els.accountingEmail.value = localStorage.getItem(STORAGE_KEYS.accountingEmail) || '';
   els.employeeName.value = localStorage.getItem(STORAGE_KEYS.employeeName) || '';
+  els.employeeId.value = localStorage.getItem(STORAGE_KEYS.employeeId) || '';
+  els.hourlyRate.value = localStorage.getItem(STORAGE_KEYS.hourlyRate) || '';
+  els.vatPercent.value = localStorage.getItem(STORAGE_KEYS.vatPercent) || '';
   els.dailyNotes.value = getDailyNotes(todayKey());
+}
+
+function getHourlyRate() {
+  const v = parseFloat(els.hourlyRate.value);
+  return isNaN(v) ? 0 : v;
+}
+function getVatPercent() {
+  const v = parseFloat(els.vatPercent.value);
+  return isNaN(v) ? 0 : v;
+}
+function formatMoney(amount) {
+  return amount.toLocaleString('he-IL', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }) + ' ₪';
+}
+function monthKey(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+}
+function currentMonthKey() {
+  return monthKey(Date.now());
+}
+function formatHebrewMonth(mKey) {
+  const [year, month] = mKey.split('-').map(Number);
+  return `${MONTHS_HE[month - 1]} ${year}`;
 }
 
 function saveEntries() {
@@ -692,8 +738,7 @@ function sendReport() {
     return;
   }
 
-  localStorage.setItem(STORAGE_KEYS.ceoEmail, ceo);
-  localStorage.setItem(STORAGE_KEYS.employeeName, els.employeeName.value.trim());
+  saveAllSettings();
 
   const employee = els.employeeName.value.trim() || '(לא צוין)';
   const dateStr = formatHebrewDate(Date.now());
@@ -705,7 +750,7 @@ function sendReport() {
 
 ${buildReportPlainText(rows)}
 
-קובץ CSV מצורף הורד מקומית. ניתן לפתוח ב-Excel / Google Sheets ולהדביק לטבלה.
+קובץ CSV מצורף הורד מקומית.
 
 תודה,
 ${employee}
@@ -717,6 +762,350 @@ ${employee}
 
   downloadDailyReport();
   setTimeout(() => { window.location.href = url; }, 200);
+}
+
+// ---------- Monthly report ----------
+function entriesInMonth(mKey) {
+  return entries.filter((e) => monthKey(e.startTs) === mKey);
+}
+
+function summarizeMonth(mKey) {
+  const monthEntries = entriesInMonth(mKey);
+  const days = [...new Set(monthEntries.map((e) => dateKey(e.startTs)))].sort();
+
+  const totals = {
+    totalMs: 0,
+    tendersHoursMs: 0,
+    articlesHoursMs: 0,
+    byCategory: {},
+  };
+  CATEGORIES.forEach((c) => {
+    totals.byCategory[c.key] = { totalMs: 0, count: 0, words: 0 };
+  });
+
+  days.forEach((d) => {
+    const sd = summarizeDay(d);
+    totals.totalMs += sd.totalMs;
+    totals.tendersHoursMs += sd.tendersHoursMs;
+    totals.articlesHoursMs += sd.articlesHoursMs;
+    Object.entries(sd.summary).forEach(([key, s]) => {
+      totals.byCategory[key].totalMs += s.totalMs;
+      if (s.qty.count) totals.byCategory[key].count += s.qty.count;
+      if (s.qty.words) totals.byCategory[key].words += s.qty.words;
+    });
+  });
+
+  const hourlyRate = getHourlyRate();
+  const vatPercent = getVatPercent();
+  const totalHours = hoursDecimal(totals.totalMs);
+  const subtotal = totalHours * hourlyRate;
+  const vatAmount = subtotal * (vatPercent / 100);
+  const grandTotal = subtotal + vatAmount;
+
+  return {
+    mKey,
+    days,
+    daysCount: days.length,
+    ...totals,
+    totalHours,
+    hourlyRate,
+    vatPercent,
+    subtotal,
+    vatAmount,
+    grandTotal,
+  };
+}
+
+function getReportRowsForMonth(mKey) {
+  const days = [...new Set(entriesInMonth(mKey).map((e) => dateKey(e.startTs)))].sort();
+  return days.map((k) => {
+    const r = buildReportRow(k);
+    r.__dKey = k;
+    return r;
+  });
+}
+
+function buildMonthCSV(mKey) {
+  const rows = getReportRowsForMonth(mKey);
+  const sm = summarizeMonth(mKey);
+  const employee = els.employeeName.value.trim();
+  const employeeId = els.employeeId.value.trim();
+
+  const csv = buildReportCSV(rows, false);
+  const lines = [csv];
+
+  const trailer = [];
+  trailer.push('');
+  trailer.push(`"דו""ח חודשי","${formatHebrewMonth(mKey)}"`);
+  if (employee) trailer.push(`"שם העובד","${employee}"`);
+  if (employeeId) trailer.push(`"ת.ז. / מס׳ עוסק","${employeeId}"`);
+  trailer.push(`"ימי עבודה","${sm.daysCount}"`);
+  trailer.push('');
+  trailer.push('"פירוט לפי קטגוריה:"');
+  trailer.push('"קטגוריה","שעות","כמות","מילים"');
+  CATEGORIES.forEach((c) => {
+    const cs = sm.byCategory[c.key];
+    trailer.push(
+      `"${c.label}","${formatHoursDecimal(cs.totalMs)}","${cs.count || ''}","${cs.words || ''}"`
+    );
+  });
+  trailer.push('');
+  trailer.push('"סיכום חודשי:"');
+  trailer.push(`"סה""כ שעות","${formatHoursDecimal(sm.totalMs)}"`);
+  trailer.push(`"שעות מכרזים+גזירים","${formatHoursDecimal(sm.tendersHoursMs)}"`);
+  trailer.push(`"שעות כתבות","${formatHoursDecimal(sm.articlesHoursMs)}"`);
+  if (sm.hourlyRate > 0) {
+    trailer.push(`"תעריף שעתי","${sm.hourlyRate.toFixed(2)} ₪"`);
+    trailer.push(`"סכום לפני מע""מ","${sm.subtotal.toFixed(2)} ₪"`);
+    if (sm.vatPercent > 0) {
+      trailer.push(`"מע""מ ${sm.vatPercent}%","${sm.vatAmount.toFixed(2)} ₪"`);
+    }
+    trailer.push(`"סכום לתשלום","${sm.grandTotal.toFixed(2)} ₪"`);
+  }
+
+  return csv + '\n' + trailer.join('\n');
+}
+
+function buildMonthHTMLEmail(mKey) {
+  const rows = getReportRowsForMonth(mKey);
+  const sm = summarizeMonth(mKey);
+  const employee = els.employeeName.value.trim() || '(לא צוין)';
+  const employeeId = els.employeeId.value.trim();
+  const monthLabel = formatHebrewMonth(mKey);
+
+  const tableRows = rows.map((row) =>
+    '<tr>' + REPORT_HEADERS.map((h) => `<td>${escapeHtml(row[h] || '')}</td>`).join('') + '</tr>'
+  ).join('');
+
+  const headerRow = REPORT_HEADERS.map((h) => `<th>${escapeHtml(h)}</th>`).join('');
+
+  const catRows = CATEGORIES.map((c) => {
+    const cs = sm.byCategory[c.key];
+    if (cs.totalMs === 0) return '';
+    const qtyText = [];
+    if (cs.count) qtyText.push(`${cs.count}`);
+    if (cs.words) qtyText.push(`${cs.words} מילים`);
+    return `<tr><td>${c.icon} ${escapeHtml(c.label)}</td><td>${formatHoursDecimal(cs.totalMs)} ש׳</td><td>${qtyText.join(', ') || '—'}</td></tr>`;
+  }).filter(Boolean).join('');
+
+  let paymentBlock = '';
+  if (sm.hourlyRate > 0) {
+    paymentBlock = `
+      <h3 style="color:#10b981;">💰 חישוב תשלום</h3>
+      <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;direction:rtl;">
+        <tr><td style="padding:6px;">סה"כ שעות:</td><td style="padding:6px;text-align:left;"><strong>${formatHoursDecimal(sm.totalMs)} ש׳</strong></td></tr>
+        <tr><td style="padding:6px;">תעריף שעתי:</td><td style="padding:6px;text-align:left;">${sm.hourlyRate.toFixed(2)} ₪</td></tr>
+        <tr><td style="padding:6px;">סכום לפני מע"מ:</td><td style="padding:6px;text-align:left;">${formatMoney(sm.subtotal)}</td></tr>
+        ${sm.vatPercent > 0 ? `<tr><td style="padding:6px;">מע"מ (${sm.vatPercent}%):</td><td style="padding:6px;text-align:left;">${formatMoney(sm.vatAmount)}</td></tr>` : ''}
+        <tr style="background:#10b981;color:white;font-size:18px;"><td style="padding:10px;"><strong>סכום לתשלום (כולל מע"מ):</strong></td><td style="padding:10px;text-align:left;"><strong>${formatMoney(sm.grandTotal)}</strong></td></tr>
+      </table>
+    `;
+  }
+
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><title>דו"ח חודשי</title></head>
+<body style="font-family:Arial,'Heebo',sans-serif;direction:rtl;background:#f8fafc;padding:20px;color:#1e293b;">
+  <div style="max-width:900px;margin:0 auto;background:white;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+    <h1 style="color:#1e40af;border-bottom:3px solid #3b82f6;padding-bottom:8px;">📊 דו"ח נוכחות חודשי</h1>
+    <p><strong>חודש:</strong> ${escapeHtml(monthLabel)}</p>
+    <p><strong>שם העובד:</strong> ${escapeHtml(employee)}</p>
+    ${employeeId ? `<p><strong>ת.ז. / מס׳ עוסק:</strong> ${escapeHtml(employeeId)}</p>` : ''}
+    <p><strong>ימי עבודה:</strong> ${sm.daysCount}</p>
+
+    <h3>פירוט יומי</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;direction:rtl;">
+      <thead style="background:#1e40af;color:white;"><tr>${headerRow}</tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+
+    <h3 style="margin-top:24px;">סיכום לפי קטגוריה</h3>
+    <table style="width:100%;border-collapse:collapse;direction:rtl;">
+      <thead style="background:#f1f5f9;"><tr><th style="padding:8px;text-align:right;">קטגוריה</th><th style="padding:8px;text-align:right;">שעות</th><th style="padding:8px;text-align:right;">כמות</th></tr></thead>
+      <tbody>${catRows || '<tr><td colspan="3" style="padding:12px;color:#64748b;">אין נתונים</td></tr>'}</tbody>
+    </table>
+
+    ${paymentBlock}
+
+    <p style="margin-top:30px;color:#64748b;font-size:12px;">
+      קובץ CSV מצורף עם פירוט מלא - מתאים להעברה להנהלת חשבונות.
+    </p>
+  </div>
+  <style>
+    table th, table td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; }
+    h3 { color: #1e40af; margin-top: 20px; }
+  </style>
+</body>
+</html>`;
+}
+
+function buildMonthPlainText(mKey) {
+  const rows = getReportRowsForMonth(mKey);
+  const sm = summarizeMonth(mKey);
+  const employee = els.employeeName.value.trim() || '(לא צוין)';
+  const monthLabel = formatHebrewMonth(mKey);
+
+  const lines = [];
+  lines.push(`דו"ח נוכחות חודשי`);
+  lines.push(`==================`);
+  lines.push('');
+  lines.push(`חודש: ${monthLabel}`);
+  lines.push(`עובד: ${employee}`);
+  lines.push(`ימי עבודה: ${sm.daysCount}`);
+  lines.push('');
+  lines.push(`פירוט יומי:`);
+  lines.push(buildReportPlainText(rows));
+  lines.push('');
+  lines.push(`סיכום לפי קטגוריה:`);
+  CATEGORIES.forEach((c) => {
+    const cs = sm.byCategory[c.key];
+    if (cs.totalMs === 0) return;
+    const qty = [];
+    if (cs.count) qty.push(`${cs.count}`);
+    if (cs.words) qty.push(`${cs.words} מילים`);
+    lines.push(`  ${c.icon} ${c.label}: ${formatHoursDecimal(cs.totalMs)} ש׳ ${qty.length ? '(' + qty.join(', ') + ')' : ''}`);
+  });
+  lines.push('');
+  lines.push(`סה"כ שעות חודשי: ${formatHoursDecimal(sm.totalMs)}`);
+
+  if (sm.hourlyRate > 0) {
+    lines.push('');
+    lines.push(`תעריף שעתי: ${sm.hourlyRate.toFixed(2)} ₪`);
+    lines.push(`סכום לפני מע"מ: ${formatMoney(sm.subtotal)}`);
+    if (sm.vatPercent > 0) lines.push(`מע"מ (${sm.vatPercent}%): ${formatMoney(sm.vatAmount)}`);
+    lines.push(`סכום לתשלום: ${formatMoney(sm.grandTotal)}`);
+  }
+
+  return lines.join('\n');
+}
+
+function renderMonthSummary() {
+  const mKey = els.monthSelect.value || currentMonthKey();
+  const sm = summarizeMonth(mKey);
+
+  if (sm.daysCount === 0) {
+    els.monthSummary.innerHTML = `<div class="empty-state">אין רישומים לחודש ${escapeHtml(formatHebrewMonth(mKey))}</div>`;
+    return;
+  }
+
+  const catRows = CATEGORIES.map((c) => {
+    const cs = sm.byCategory[c.key];
+    if (cs.totalMs === 0) return '';
+    const qty = [];
+    if (cs.count) qty.push(`${cs.count}`);
+    if (cs.words) qty.push(`${cs.words} מילים`);
+    return `
+      <div class="summary-row">
+        <span class="summary-label">${c.icon} ${escapeHtml(c.label)}</span>
+        <span class="summary-value">${formatHoursDecimal(cs.totalMs)} ש׳ ${qty.length ? '· ' + qty.join(', ') : ''}</span>
+      </div>
+    `;
+  }).filter(Boolean).join('');
+
+  const paymentRow = sm.hourlyRate > 0
+    ? `
+      <div class="summary-row">
+        <span class="summary-label">תעריף שעתי</span>
+        <span class="summary-value">${sm.hourlyRate.toFixed(2)} ₪</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">סכום לפני מע"מ</span>
+        <span class="summary-value">${formatMoney(sm.subtotal)}</span>
+      </div>
+      ${sm.vatPercent > 0 ? `
+      <div class="summary-row">
+        <span class="summary-label">מע"מ (${sm.vatPercent}%)</span>
+        <span class="summary-value">${formatMoney(sm.vatAmount)}</span>
+      </div>` : ''}
+      <div class="summary-row payment">
+        <span class="summary-label">💰 סכום לתשלום</span>
+        <span class="summary-value">${formatMoney(sm.grandTotal)}</span>
+      </div>
+    `
+    : `<div class="summary-row"><span class="summary-label" style="font-size:12px;">להזנת חישוב תשלום, מלאי "תעריף שעתי" בהגדרות.</span></div>`;
+
+  els.monthSummary.innerHTML = `
+    <div class="summary-row">
+      <span class="summary-label">📅 ימי עבודה</span>
+      <span class="summary-value">${sm.daysCount}</span>
+    </div>
+    ${catRows}
+    <div class="summary-row total">
+      <span class="summary-label">סה"כ שעות חודשי</span>
+      <span class="summary-value">${formatHoursDecimal(sm.totalMs)} ש׳</span>
+    </div>
+    ${paymentRow}
+  `;
+}
+
+function downloadMonthReport() {
+  const mKey = els.monthSelect.value || currentMonthKey();
+  const sm = summarizeMonth(mKey);
+  if (sm.daysCount === 0) {
+    alert('אין רישומים לחודש שנבחר.');
+    return;
+  }
+  const csv = buildMonthCSV(mKey);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `attendance-month-${mKey}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function previewMonthReport() {
+  const mKey = els.monthSelect.value || currentMonthKey();
+  const sm = summarizeMonth(mKey);
+  if (sm.daysCount === 0) {
+    els.previewBody.innerHTML = `<p>אין רישומים לחודש ${escapeHtml(formatHebrewMonth(mKey))}</p>`;
+  } else {
+    const html = buildMonthHTMLEmail(mKey);
+    const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    els.previewBody.innerHTML = match ? match[1] : html;
+  }
+  els.previewModal.hidden = false;
+}
+
+function sendMonthReport() {
+  const ceo = els.ceoEmail.value.trim();
+  const accounting = els.accountingEmail.value.trim();
+  if (!ceo && !accounting) {
+    alert('יש להזין לפחות אימייל אחד (מנכ"ל או הנהלת חשבונות) לפני שליחה.');
+    els.ceoEmail.focus();
+    return;
+  }
+  const mKey = els.monthSelect.value || currentMonthKey();
+  const sm = summarizeMonth(mKey);
+  if (sm.daysCount === 0) {
+    alert('אין רישומים לחודש שנבחר.');
+    return;
+  }
+
+  saveAllSettings();
+
+  const employee = els.employeeName.value.trim() || '(לא צוין)';
+  const monthLabel = formatHebrewMonth(mKey);
+  const subject = `דו"ח נוכחות חודשי — ${employee} — ${monthLabel}`;
+  const body = buildMonthPlainText(mKey);
+
+  const recipients = [ceo, accounting].filter(Boolean).join(',');
+  const url = `mailto:${encodeURIComponent(recipients)}`
+    + `?subject=${encodeURIComponent(subject)}`
+    + `&body=${encodeURIComponent(body)}`;
+
+  downloadMonthReport();
+  setTimeout(() => { window.location.href = url; }, 200);
+}
+
+// ---------- Settings persistence ----------
+function saveAllSettings() {
+  localStorage.setItem(STORAGE_KEYS.ceoEmail, els.ceoEmail.value.trim());
+  localStorage.setItem(STORAGE_KEYS.accountingEmail, els.accountingEmail.value.trim());
+  localStorage.setItem(STORAGE_KEYS.employeeName, els.employeeName.value.trim());
+  localStorage.setItem(STORAGE_KEYS.employeeId, els.employeeId.value.trim());
+  localStorage.setItem(STORAGE_KEYS.hourlyRate, els.hourlyRate.value.trim());
+  localStorage.setItem(STORAGE_KEYS.vatPercent, els.vatPercent.value.trim());
 }
 
 function clearToday() {
@@ -739,10 +1128,63 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+// ---------- PWA install ----------
+let deferredInstallPrompt = null;
+
+function setupInstall() {
+  if (localStorage.getItem(STORAGE_KEYS.installDismissed) === '1') return;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (!isStandalone()) els.installBanner.hidden = false;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    els.installBanner.hidden = true;
+    deferredInstallPrompt = null;
+  });
+
+  els.installBtn.addEventListener('click', async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      try { await deferredInstallPrompt.userChoice; } catch {}
+      deferredInstallPrompt = null;
+      els.installBanner.hidden = true;
+    } else {
+      alert('להתקנה ידנית:\n\niOS Safari: לחצי על כפתור השיתוף ⬆ ובחרי "הוסף למסך הבית"\n\nAndroid Chrome: לחצי על תפריט ⋮ ובחרי "הוספה למסך הבית"');
+    }
+  });
+
+  els.installDismiss.addEventListener('click', () => {
+    els.installBanner.hidden = true;
+    localStorage.setItem(STORAGE_KEYS.installDismissed, '1');
+  });
+
+  if (isIOS() && !isStandalone()) {
+    els.installBanner.hidden = false;
+  }
+}
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+}
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (location.protocol === 'file:') return;
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
 // ---------- Init ----------
 function init() {
   loadAll();
   els.todayDate.textContent = formatHebrewDate(Date.now());
+  els.monthSelect.value = currentMonthKey();
 
   els.workTypes.querySelectorAll('.work-type-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -756,7 +1198,10 @@ function init() {
   els.sendBtn.addEventListener('click', sendReport);
   els.downloadBtn.addEventListener('click', downloadDailyReport);
   els.previewBtn.addEventListener('click', previewReport);
-  els.exportMonthBtn.addEventListener('click', exportMonth);
+  els.sendMonthBtn.addEventListener('click', sendMonthReport);
+  els.downloadMonthBtn.addEventListener('click', downloadMonthReport);
+  els.previewMonthBtn.addEventListener('click', previewMonthReport);
+  els.monthSelect.addEventListener('change', renderMonthSummary);
   els.clearBtn.addEventListener('click', clearToday);
 
   els.modalClose.addEventListener('click', () => { els.previewModal.hidden = true; });
@@ -770,12 +1215,16 @@ function init() {
     if (e.target === els.quantityModal) skipQuantityAndClose();
   });
 
-  els.ceoEmail.addEventListener('change', () => {
-    localStorage.setItem(STORAGE_KEYS.ceoEmail, els.ceoEmail.value.trim());
+  [
+    els.ceoEmail, els.accountingEmail, els.employeeName, els.employeeId,
+    els.hourlyRate, els.vatPercent,
+  ].forEach((input) => {
+    input.addEventListener('change', () => {
+      saveAllSettings();
+      renderMonthSummary();
+    });
   });
-  els.employeeName.addEventListener('change', () => {
-    localStorage.setItem(STORAGE_KEYS.employeeName, els.employeeName.value.trim());
-  });
+
   els.dailyNotes.addEventListener('change', () => {
     setDailyNotes(todayKey(), els.dailyNotes.value.trim());
   });
@@ -785,10 +1234,22 @@ function init() {
     selectWorkType(activeSession.workType);
   }
 
+  const params = new URLSearchParams(location.search);
+  if (params.get('action') === 'start') {
+    setTimeout(() => {
+      const firstBtn = els.workTypes.querySelector('.work-type-btn');
+      if (firstBtn) firstBtn.focus();
+    }, 100);
+  }
+
   renderAll();
+  renderMonthSummary();
   tickClock();
   setInterval(tickClock, 1000);
   setInterval(() => { if (activeSession) renderSummary(); }, 1000);
+
+  setupInstall();
+  registerServiceWorker();
 }
 
 document.addEventListener('DOMContentLoaded', init);
