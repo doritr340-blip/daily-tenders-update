@@ -40,23 +40,15 @@
           <span class="wt-icon">⌨️</span>
           <span class="wt-label">הקלדות</span>
         </button>
-        <button type="button" class="work-type-btn" data-type="זומים / שיחות עבודה" role="radio" aria-checked="false">
-          <span class="wt-icon">📞</span>
-          <span class="wt-label">זומים / שיחות עבודה</span>
-        </button>
-        <button type="button" class="work-type-btn" data-type="כתיבת כתבות" role="radio" aria-checked="false">
+        <button type="button" class="work-type-btn" data-type="כתבות" role="radio" aria-checked="false">
           <span class="wt-icon">📝</span>
           <span class="wt-label">כתיבת כתבות</span>
         </button>
+        <button type="button" class="work-type-btn" data-type="זומים" role="radio" aria-checked="false">
+          <span class="wt-icon">📞</span>
+          <span class="wt-label">זומים / שיחות</span>
+        </button>
       </div>
-
-      <label for="workNote" class="label">הערה / פירוט (לא חובה)</label>
-      <input
-        type="text"
-        id="workNote"
-        class="input"
-        placeholder="פרטים נוספים על המשימה..."
-      />
 
       <div class="actions">
         <button id="startBtn" class="btn btn-primary">▶ התחל עבודה</button>
@@ -66,38 +58,58 @@
 
     <section class="card">
       <div class="card-header">
-        <h2>רישומים להיום</h2>
-        <span class="total-pill" id="totalPill">סה"כ: 00:00:00</span>
+        <h2>סיכום יומי</h2>
+        <span class="total-pill" id="totalPill">סה"כ שעות: 0.00</span>
       </div>
       <div class="table-wrap">
-        <table class="entries">
+        <table class="daily-summary">
           <thead>
             <tr>
+              <th>קטגוריה</th>
               <th>התחלה</th>
               <th>סיום</th>
               <th>משך</th>
-              <th>סוג עבודה</th>
-              <th>הערה</th>
-              <th></th>
+              <th>כמות</th>
+              <th>הערות</th>
             </tr>
           </thead>
-          <tbody id="entriesBody">
-            <tr class="empty"><td colspan="6">אין רישומים עדיין</td></tr>
-          </tbody>
+          <tbody id="summaryBody"></tbody>
         </table>
       </div>
+
+      <details class="sessions-details">
+        <summary>הצג רישומים מפורטים ליום (סשנים בודדים)</summary>
+        <div class="table-wrap">
+          <table class="entries">
+            <thead>
+              <tr>
+                <th>קטגוריה</th>
+                <th>התחלה</th>
+                <th>סיום</th>
+                <th>משך</th>
+                <th>כמות</th>
+                <th>הערה</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="entriesBody">
+              <tr class="empty"><td colspan="7">אין רישומים עדיין</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <label for="dailyNotes" class="label">הערות יומיות</label>
+      <textarea
+        id="dailyNotes"
+        class="input textarea"
+        rows="2"
+        placeholder="הערות כלליות ליום (לא חובה)"
+      ></textarea>
     </section>
 
     <section class="card">
-      <h2>שליחת דו"ח יומי למנכ"ל</h2>
-      <label for="ceoEmail" class="label">אימייל המנכ"ל</label>
-      <input
-        type="email"
-        id="ceoEmail"
-        class="input"
-        placeholder="ceo@company.com"
-      />
-
+      <h2>הגדרות ושליחת דו"ח</h2>
       <label for="employeeName" class="label">שם העובד</label>
       <input
         type="text"
@@ -106,31 +118,60 @@
         placeholder="שם מלא"
       />
 
+      <label for="ceoEmail" class="label">אימייל המנכ"ל</label>
+      <input
+        type="email"
+        id="ceoEmail"
+        class="input"
+        placeholder="ceo@company.com"
+      />
+
       <div class="actions">
         <button id="sendBtn" class="btn btn-success">📧 שלח דו"ח למנכ"ל</button>
+        <button id="downloadBtn" class="btn btn-primary">⬇ הורד דו"ח יומי</button>
         <button id="previewBtn" class="btn btn-secondary">👁 תצוגה מקדימה</button>
+      </div>
+      <div class="actions">
+        <button id="exportMonthBtn" class="btn btn-secondary">⬇ ייצוא חודש מלא (CSV)</button>
         <button id="clearBtn" class="btn btn-ghost">🗑 נקה רישומים של היום</button>
       </div>
       <p class="hint">
-        בלחיצה על "שלח דו"ח" ייפתח חלון המייל המוגדר במחשב עם הטבלה מוכנה לשליחה.
+        ההורדה תייצא קובץ CSV בפורמט הטבלה. השליחה למנכ"ל תפתח את תוכנת הדואר עם הטבלה כתוכן המייל.
       </p>
     </section>
 
     <section class="card history-card">
       <div class="card-header">
         <h2>היסטוריה</h2>
-        <button id="exportBtn" class="btn btn-secondary small">⬇ ייצוא CSV</button>
       </div>
       <div id="history" class="history"></div>
     </section>
 
+    <!-- Modal: ask for quantity after stop -->
+    <div id="quantityModal" class="modal" hidden>
+      <div class="modal-content modal-sm">
+        <div class="modal-header">
+          <h3 id="quantityTitle">פרטי הסשן</h3>
+          <button class="modal-close" id="quantityClose">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="quantityFields"></div>
+          <div class="actions">
+            <button id="quantitySave" class="btn btn-success">שמור</button>
+            <button id="quantityCancel" class="btn btn-ghost">דלג</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: preview -->
     <div id="previewModal" class="modal" hidden>
       <div class="modal-content">
         <div class="modal-header">
           <h3>תצוגה מקדימה של הדו"ח</h3>
           <button class="modal-close" id="modalClose">✕</button>
         </div>
-        <div id="previewBody" class="modal-body"></div>
+        <div id="previewBody" class="modal-body preview-body"></div>
       </div>
     </div>
   </div>

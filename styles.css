@@ -410,11 +410,113 @@ body {
 .modal-body {
   padding: 20px;
   overflow-y: auto;
-  white-space: pre-wrap;
-  font-family: 'Courier New', monospace;
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--text);
+}
+
+.modal-sm .modal-content,
+.modal-content.modal-sm {
+  max-width: 460px;
+}
+
+.preview-body {
+  white-space: normal;
+}
+
+.preview-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.preview-body th,
+.preview-body td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: right;
+}
+
+.preview-body th {
+  background: var(--surface-2);
+}
+
+.daily-summary {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.daily-summary th {
+  background: var(--surface-2);
+  padding: 10px 8px;
+  text-align: right;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.daily-summary td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-summary tr:last-child td {
+  border-bottom: none;
+}
+
+.daily-summary tr.empty-row td {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.daily-summary .cat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.sessions-details {
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+.sessions-details summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  user-select: none;
+}
+
+.sessions-details summary:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.sessions-details[open] summary {
+  margin-bottom: 8px;
+}
+
+.textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.qty-field {
+  margin-bottom: 12px;
+}
+
+.qty-field label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 @media (max-width: 600px) {
