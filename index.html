@@ -4,229 +4,164 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1e293b" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="נוכחות" />
-  <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <title>שעון נוכחות</title>
+  <title>גזירי מכרזים יומיים</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
-    <div id="installBanner" class="install-banner" hidden>
-      <span>📱 התקיני את האפליקציה במכשיר לגישה מהירה</span>
-      <div>
-        <button id="installBtn" class="btn btn-primary small">התקנה</button>
-        <button id="installDismiss" class="btn btn-ghost small">לא עכשיו</button>
-      </div>
-    </div>
-
     <header class="header">
-      <h1>⏱ שעון נוכחות</h1>
-      <div class="live-clock" id="liveClock">--:--:--</div>
+      <h1>📰 גזירי מכרזים יומיים</h1>
       <div class="today-date" id="todayDate"></div>
     </header>
 
-    <section class="card big-status" id="statusCard">
-      <div class="status-headline" id="statusHeadline">לא בעבודה</div>
-      <div class="status-detail" id="statusDetail"></div>
-    </section>
-
-    <section class="card">
-      <h2 class="section-title">בחרי סוג עבודה והתחילי</h2>
-      <div class="work-types" id="workTypes" role="radiogroup" aria-label="סוג עבודה">
-        <button type="button" class="work-type-btn" data-type="גזירים" role="radio" aria-checked="false">
-          <span class="wt-icon">✂️</span>
-          <span class="wt-label">גזירים</span>
-        </button>
-        <button type="button" class="work-type-btn" data-type="הקלדות" role="radio" aria-checked="false">
-          <span class="wt-icon">⌨️</span>
-          <span class="wt-label">הקלדות</span>
-        </button>
-        <button type="button" class="work-type-btn" data-type="כתבות" role="radio" aria-checked="false">
-          <span class="wt-icon">📝</span>
-          <span class="wt-label">כתיבת כתבות</span>
-        </button>
-        <button type="button" class="work-type-btn" data-type="זומים" role="radio" aria-checked="false">
-          <span class="wt-icon">📞</span>
-          <span class="wt-label">זומים / שיחות</span>
-        </button>
+    <!-- STEP 1: Upload PDF -->
+    <section class="card step" id="step1">
+      <div class="step-head">
+        <span class="step-num">1</span>
+        <h2 class="section-title">העלי קובץ PDF של עיתון</h2>
       </div>
+      <div class="step-body">
+        <label for="sourceSelect" class="label">מקור (עיתון)</label>
+        <select id="sourceSelect" class="input">
+          <option value="גלובס">גלובס</option>
+          <option value="ישראל היום">ישראל היום</option>
+          <option value="מעריב">מעריב</option>
+          <option value="מעריב הבוקר">מעריב הבוקר</option>
+          <option value="מעריב סופשבוע">מעריב סופשבוע</option>
+          <option value="מעריב עסקים">מעריב עסקים</option>
+          <option value="הארץ">הארץ</option>
+          <option value="כלכליסט">כלכליסט</option>
+          <option value="ידיעות אחרונות">ידיעות אחרונות</option>
+          <option value="אחר">אחר</option>
+        </select>
 
-      <div class="actions main-actions">
-        <button id="startBtn" class="btn btn-primary big">▶ התחל עבודה</button>
-        <button id="stopBtn" class="btn btn-danger big" disabled>■ סיים עבודה</button>
+        <label for="pdfInput" class="label" style="margin-top:12px;">קובץ PDF</label>
+        <input type="file" id="pdfInput" accept="application/pdf" class="input file-input" />
+
+        <div id="pdfStatus" class="hint"></div>
       </div>
     </section>
 
-    <section class="card">
-      <div class="card-header">
-        <h2 class="section-title">היום שלך</h2>
-        <span class="total-pill" id="totalPill">סה"כ: 0.00 ש'</span>
+    <!-- STEP 2: Pages preview + Copy prompt -->
+    <section class="card step" id="step2" hidden>
+      <div class="step-head">
+        <span class="step-num">2</span>
+        <h2 class="section-title">העתיקי את הפרומפט והדביקי ב-Claude.ai</h2>
       </div>
-      <div class="table-wrap">
-        <table class="daily-summary">
-          <thead>
-            <tr>
-              <th>קטגוריה</th>
-              <th>התחלה</th>
-              <th>סיום</th>
-              <th>שעות</th>
-              <th>כמות</th>
-            </tr>
-          </thead>
-          <tbody id="summaryBody"></tbody>
-        </table>
-      </div>
-
-      <div class="actions main-actions">
-        <button id="sendBtn" class="btn btn-success big">📧 שלח דו"ח יומי למנכ"ל</button>
-      </div>
-      <button id="previewBtn" class="link-btn">👁 הצג תצוגה מקדימה</button>
-    </section>
-
-    <section class="card monthly-card">
-      <h2 class="section-title">📊 דו"ח חודשי לתשלום</h2>
-
-      <div class="month-controls">
-        <input type="month" id="monthSelect" class="input big-input" />
-      </div>
-
-      <div id="monthSummary" class="month-summary"></div>
-
-      <div class="actions main-actions">
-        <button id="sendMonthBtn" class="btn btn-success big">📧 שלח דו"ח חודשי</button>
-        <button id="printInvoiceBtn" class="btn btn-primary big">🖨 חשבונית להדפסה / PDF</button>
-      </div>
-      <div class="actions">
-        <button id="downloadMonthBtn" class="link-btn">⬇ הורד CSV להנהלת חשבונות</button>
-        <button id="previewMonthBtn" class="link-btn">👁 תצוגה מקדימה</button>
-      </div>
-    </section>
-
-    <details class="card collapsible-card">
-      <summary class="collapsible-summary">
-        ⚙ הגדרות נוספות וניהול
-      </summary>
-      <div class="collapsible-body">
-        <h3>הפרטים שלך</h3>
-        <label for="employeeName" class="label">שם מלא</label>
-        <input type="text" id="employeeName" class="input" placeholder="שם מלא" />
-
-        <label for="employeeId" class="label">ת.ז. / מס׳ עוסק</label>
-        <input type="text" id="employeeId" class="input" placeholder="123456789" />
-
-        <label for="ceoEmail" class="label">אימייל המנכ"ל</label>
-        <input type="email" id="ceoEmail" class="input" placeholder="ceo@company.com" />
-
-        <label for="accountingEmail" class="label">אימייל הנהלת חשבונות (אופציונלי)</label>
-        <input type="email" id="accountingEmail" class="input" placeholder="accounting@company.com" />
-
-        <div class="settings-grid">
-          <div>
-            <label for="hourlyRate" class="label">תעריף שעתי (₪)</label>
-            <input type="number" id="hourlyRate" class="input" min="0" step="0.01" placeholder="60" />
-          </div>
-          <div>
-            <label for="vatPercent" class="label">מע"מ (%)</label>
-            <input type="number" id="vatPercent" class="input" min="0" step="0.01" placeholder="18" />
-          </div>
-        </div>
-
-        <h3 style="margin-top: 20px;">הערות והתראות</h3>
-
-        <label for="dailyNotes" class="label">הערה ליום הנוכחי (לא חובה)</label>
-        <textarea
-          id="dailyNotes"
-          class="input textarea"
-          rows="2"
-          placeholder="הערות כלליות ליום"
-        ></textarea>
-
-        <div class="toggle-row">
-          <label for="notificationsEnabled">🔔 הזכר לי בסוף יום ובסוף חודש</label>
-          <label class="switch">
-            <input type="checkbox" id="notificationsEnabled" />
-            <span class="slider"></span>
-          </label>
-        </div>
-        <p class="hint" id="notificationsHint">
-          תקבלי הזכרה אם שכחת לסמן סיום ב-18:00, ובסוף החודש להעביר את הדו"ח.
+      <div class="step-body">
+        <p class="hint">
+          1. ב-<a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> פתחי שיחה חדשה.<br/>
+          2. צרפי את ה-PDF (אייקון אטב נייר).<br/>
+          3. לחצי "העתק פרומפט" כאן והדביקי ב-Claude.<br/>
+          4. העתיקי את התשובה (JSON) של Claude והדביקי בשלב 3 כאן למטה.
         </p>
 
-        <h3 style="margin-top: 20px;">היסטוריה</h3>
-        <div id="history" class="history"></div>
-
-        <h3 style="margin-top: 20px;">פעולות מתקדמות</h3>
         <div class="actions">
-          <button id="downloadDailyBtn" class="btn btn-secondary">⬇ הורד CSV יומי</button>
-          <button id="clearBtn" class="btn btn-ghost">🗑 נקה רישומים של היום</button>
+          <button id="copyPromptBtn" class="btn btn-primary">📋 העתק פרומפט ל-Claude</button>
+          <button id="showPromptBtn" class="btn btn-ghost">👁 הצג פרומפט</button>
+        </div>
+
+        <details class="prompt-preview" id="promptPreview" hidden>
+          <summary>הפרומפט המלא</summary>
+          <pre id="promptText"></pre>
+        </details>
+
+        <div class="pages-info" id="pagesInfo"></div>
+      </div>
+    </section>
+
+    <!-- STEP 3: Paste JSON response -->
+    <section class="card step" id="step3" hidden>
+      <div class="step-head">
+        <span class="step-num">3</span>
+        <h2 class="section-title">הדביקי את תשובת Claude (JSON)</h2>
+      </div>
+      <div class="step-body">
+        <textarea id="jsonInput" class="input textarea code-area" rows="8"
+          placeholder='[{"page": 1, "inviter": "...", "tender_number": "...", "classification": "P", "title": "...", "bbox": [10, 20, 80, 30]}]'></textarea>
+        <div class="actions">
+          <button id="parseJsonBtn" class="btn btn-primary">✓ עבדי את הנתונים</button>
+        </div>
+        <div id="parseStatus" class="hint"></div>
+      </div>
+    </section>
+
+    <!-- STEP 4: Review tenders + crop -->
+    <section class="card step" id="step4" hidden>
+      <div class="step-head">
+        <span class="step-num">4</span>
+        <h2 class="section-title">סקירת מכרזים ועריכה</h2>
+      </div>
+      <div class="step-body">
+        <div class="table-wrap">
+          <table class="tenders-table">
+            <thead>
+              <tr>
+                <th>שם מזמין</th>
+                <th>מס' מכרז</th>
+                <th>סיווג</th>
+                <th>סיווג ומספר</th>
+                <th>שם מכרז</th>
+                <th>מקור</th>
+                <th>הערה</th>
+                <th>עמוד</th>
+                <th>תמונה</th>
+                <th>פעולות</th>
+              </tr>
+            </thead>
+            <tbody id="tendersBody"></tbody>
+          </table>
+        </div>
+
+        <div class="actions">
+          <button id="addRowBtn" class="btn btn-ghost">➕ הוסף שורה ידנית</button>
         </div>
       </div>
-    </details>
+    </section>
 
-    <!-- Modal: First-run welcome -->
-    <div id="welcomeModal" class="modal" hidden>
-      <div class="modal-content modal-sm">
+    <!-- STEP 5: Download ZIP -->
+    <section class="card step" id="step5" hidden>
+      <div class="step-head">
+        <span class="step-num">5</span>
+        <h2 class="section-title">הורדה</h2>
+      </div>
+      <div class="step-body">
+        <p class="hint">קובץ ZIP שמכיל תיקיית <code>images/</code> עם כל התמונות החתוכות + <code>tenders.xlsx</code></p>
+        <div class="actions main-actions">
+          <button id="downloadZipBtn" class="btn btn-success big">⬇ הורד ZIP יומי</button>
+          <button id="downloadCsvBtn" class="btn btn-secondary">⬇ הורד רק CSV</button>
+        </div>
+        <div id="downloadStatus" class="hint"></div>
+      </div>
+    </section>
+
+    <!-- Crop modal -->
+    <div id="cropModal" class="modal" hidden>
+      <div class="modal-content modal-lg">
         <div class="modal-header">
-          <h3>👋 ברוכה הבאה!</h3>
+          <h3 id="cropTitle">חיתוך מודעה</h3>
+          <button class="modal-close" id="cropClose">✕</button>
         </div>
         <div class="modal-body">
-          <p style="margin-bottom: 16px;">
-            רק 3 פרטים קצרים פעם אחת ואת מוכנה:
-          </p>
-
-          <label for="welcomeName" class="label">השם שלך</label>
-          <input type="text" id="welcomeName" class="input big-input" placeholder="שם מלא" />
-
-          <label for="welcomeCeo" class="label">אימייל המנכ"ל</label>
-          <input type="email" id="welcomeCeo" class="input big-input" placeholder="ceo@company.com" />
-
-          <label for="welcomeRate" class="label">תעריף שעתי (₪) - אופציונלי</label>
-          <input type="number" id="welcomeRate" class="input big-input" min="0" step="0.01" placeholder="לדוגמה: 60" />
-
-          <div class="actions main-actions" style="margin-top: 16px;">
-            <button id="welcomeSave" class="btn btn-success big">שמור והתחל</button>
+          <p class="hint">גררי עם העכבר/אצבע מסביב למודעה. אפשר לתקן בכל פעם.</p>
+          <div class="crop-wrap">
+            <canvas id="cropCanvas"></canvas>
+            <div id="cropBox" class="crop-box" hidden></div>
           </div>
-          <p class="hint">
-            ניתן לשנות בכל עת מההגדרות בתחתית האפליקציה.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal: ask for quantity after stop -->
-    <div id="quantityModal" class="modal" hidden>
-      <div class="modal-content modal-sm">
-        <div class="modal-header">
-          <h3 id="quantityTitle">פרטי הסשן</h3>
-          <button class="modal-close" id="quantityClose">✕</button>
-        </div>
-        <div class="modal-body">
-          <div id="quantityFields"></div>
           <div class="actions main-actions">
-            <button id="quantitySave" class="btn btn-success big">שמור</button>
-            <button id="quantityCancel" class="btn btn-ghost">דלג</button>
+            <button id="cropSaveBtn" class="btn btn-success big">✓ שמור חיתוך</button>
+            <button id="cropResetBtn" class="btn btn-ghost">↺ אפס</button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Modal: preview -->
-    <div id="previewModal" class="modal" hidden>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>תצוגה מקדימה של הדו"ח</h3>
-          <button class="modal-close" id="modalClose">✕</button>
-        </div>
-        <div id="previewBody" class="modal-body preview-body"></div>
       </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Libraries from CDN (pdf.js loaded as ESM inside app.js) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
