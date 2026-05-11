@@ -4,7 +4,7 @@ name: Deploy Jekyll with GitHub Pages dependencies preinstalled
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["claude/attendance-tracking-app-C6oqe"]
+    branches: ["claude/attendance-tracking-app-C6oqe", "claude/change-letter-graphics-11qIp"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
