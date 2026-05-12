@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'attendance-v3';
+const CACHE_NAME = 'attendance-v4';
 const ASSETS = [
   './',
   './index.html',

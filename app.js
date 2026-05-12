@@ -1,5 +1,26 @@
 'use strict';
 
+(function setupErrorBanner() {
+  function show(msg) {
+    var go = function () {
+      var existing = document.getElementById('__jsErrBanner');
+      var el = existing || document.createElement('div');
+      el.id = '__jsErrBanner';
+      el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;font:14px/1.4 system-ui,sans-serif;padding:10px 14px;direction:ltr;text-align:left;white-space:pre-wrap;max-height:40vh;overflow:auto;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+      el.textContent = (el.textContent ? el.textContent + '\n' : '') + msg;
+      if (!existing && document.body) document.body.appendChild(el);
+      else if (!existing) document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(el); });
+    };
+    try { go(); } catch (_) {}
+  }
+  window.addEventListener('error', function (e) {
+    show('JS error: ' + (e.message || e.error) + (e.filename ? ' @ ' + e.filename + ':' + e.lineno : ''));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    show('Promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+})();
+
 const STORAGE_KEYS = {
   entries: 'attendance:entries',
   active: 'attendance:active',
