@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>רדאר הבוקר · סוכן LinkedIn של כוכבית ארנון</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🌅</span>
+      <div>
+        <h1>רדאר הבוקר</h1>
+        <p class="tagline">סוכן הנוכחות בלינקדאין · כוכבית ארנון · בינה מלאכותית בגובה העיניים</p>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab is-active" data-tab="radar">🔦 רדאר חיפוש</button>
+      <button class="tab" data-tab="engine">✍️ מנוע תגובות</button>
+      <button class="tab" data-tab="how">📖 איך מטמיעים</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= רדאר חיפוש ================= -->
+    <section id="radar" class="panel is-active">
+      <div class="intro">
+        <h2>🔦 רדאר חיפוש — הסוכן מביא אותך לשיחות הנכונות</h2>
+        <p>
+          לחיצה על כל כפתור פותחת בלינקדאין בדיוק את התוכן שרלוונטי לכוכבית — פוסטים אחרונים
+          של מנכ"לים וארגונים בנושאי AI ו-CX. בלי סיסמה, בלי גריפה, בלי לעבור על תנאי השימוש.
+          <strong>זו הדרך הבטוחה לסרוק את לינקדאין כל בוקר.</strong>
+        </p>
+      </div>
+
+      <div class="radar-controls">
+        <label>מילת חיפוש חופשית (לא חובה):
+          <input id="freeQuery" type="text" placeholder="לדוגמה: סוכני AI בשירות לקוחות" />
+        </label>
+        <button id="freeSearchBtn" class="btn primary">🔎 חפש בלינקדאין</button>
+      </div>
+
+      <h3 class="section-title">חיפושים מוכנים לפי נושא</h3>
+      <div id="topicLinks" class="link-grid"></div>
+
+      <h3 class="section-title">האשטגים למעקב</h3>
+      <div id="hashtagLinks" class="chip-grid"></div>
+
+      <div class="tip-box">
+        💡 <strong>טיפ:</strong> מסננים בלינקדאין לפי "Posts" + "Past 24 hours" כדי לתפוס
+        שיחות טריות לפני שהן מתמלאות תגובות. כשמצאת פוסט שווה — מעתיקים אותו ועוברים ל"מנוע תגובות".
+      </div>
+    </section>
+
+    <!-- ================= מנוע תגובות ================= -->
+    <section id="engine" class="panel">
+      <div class="intro">
+        <h2>✍️ מנוע התגובות</h2>
+        <p>הדביקי כאן פוסט שמצאת. הסוכן ינקד עד כמה הוא שווה לכוכבית, ויציע 3 טיוטות תגובה בקול שלה.</p>
+      </div>
+
+      <div class="engine-grid">
+        <div class="input-col">
+          <label>שם הכותב/ת ותפקיד:
+            <input id="authorRole" type="text" placeholder="לדוגמה: דנה כהן, מנכ\"לית חברת ביטוח" />
+          </label>
+          <label>תוכן הפוסט:
+            <textarea id="postText" rows="9" placeholder="הדביקי כאן את הטקסט המלא של הפוסט..."></textarea>
+          </label>
+          <button id="analyzeBtn" class="btn primary">⚡ נתח והצע תגובות</button>
+          <button id="copyPromptBtn" class="btn ghost">📋 העתק פרומפט מלא ל-LLM (לליטוש)</button>
+        </div>
+
+        <div class="output-col">
+          <div id="result" class="result empty">
+            התוצאות יופיעו כאן ⬅️
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-title">📌 פוסטים שאספתי היום</h3>
+      <div id="savedList" class="saved-list"><p class="muted">עדיין לא שמרת פוסטים היום.</p></div>
+    </section>
+
+    <!-- ================= איך מטמיעים ================= -->
+    <section id="how" class="panel">
+      <div class="intro">
+        <h2>📖 איך מטמיעים את הסוכן</h2>
+      </div>
+      <div class="how-card">
+        <h3>⚠️ קודם — האמת על לינקדאין</h3>
+        <p>ללינקדאין אין API פתוח לקריאת הפיד, וגריפה אוטומטית נוגדת את תנאי השימוש ועלולה
+        להשעות את החשבון. לכן הסוכן עובד באחת מ-3 דרכים לגיטימיות:</p>
+      </div>
+      <div class="how-card">
+        <h3>🥇 דרך 1 — סוכן עם חיפוש web (מומלצת)</h3>
+        <p>מדביקים את <code>agent-prompt.md</code> כ-Instructions ב-ChatGPT / Claude / Perplexity,
+        ומבקשים כל בוקר לחפש פוסטים ציבוריים אחרונים בנושאי AI/CX של מנכ"לים. אפשר לתזמן ל-07:00.</p>
+      </div>
+      <div class="how-card">
+        <h3>🖥️ דרך 2 — הכלי הזה</h3>
+        <p>"רדאר חיפוש" מביא אותך לשיחות הנכונות בלינקדאין, ו"מנוע התגובות" מנקד ומציע תגובות.
+        אפס סיכון, רץ בדפדפן.</p>
+      </div>
+      <div class="how-card">
+        <h3>🤖 דרך 3 — אוטומציה מלאה</h3>
+        <p>RSS.app / Phantombuster → Make.com → LLM עם הפרומפט → מייל/וואטסאפ ב-07:00.
+        זו הדרך "שיגיע לבד כל בוקר". פירוט מלא בקובץ <code>README.md</code>.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>נבנה עבור כוכבית ארנון · KA / K-Expert AI</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
