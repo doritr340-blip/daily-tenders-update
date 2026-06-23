@@ -1,0 +1,111 @@
+{
+  "name": "רדאר הבוקר — סוכן LinkedIn של כוכבית ארנון",
+  "flow": [
+    {
+      "id": 1,
+      "module": "rss:TriggerNewArticles",
+      "version": 1,
+      "parameters": {
+        "url": "REPLACE_WITH_YOUR_RSS_APP_FEED_URL",
+        "maxResults": 25,
+        "__COMMENT__": "כתובת ה-RSS feed שיצרת ב-RSS.app מחיפוש/האשטג ציבורי בלינקדאין. אפשר לשכפל מודול זה לכמה נושאים."
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": { "x": 0, "y": 0 },
+        "restore": {},
+        "expect": [
+          { "name": "url", "type": "url", "label": "RSS feed URL", "required": true },
+          { "name": "maxResults", "type": "uinteger", "label": "Maximum number of returned items" }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "builtin:TextAggregator",
+      "version": 1,
+      "parameters": {
+        "rowSeparator": "\n\n---\n\n"
+      },
+      "mapper": {
+        "value": "כותב/ת: {{1.author}}\nקישור: {{1.url}}\nתאריך: {{1.dateModified}}\nתוכן:\n{{1.title}}\n{{1.summary}}"
+      },
+      "metadata": {
+        "designer": { "x": 300, "y": 0 },
+        "restore": {},
+        "__COMMENT__": "מאחד את כל הפוסטים שנאספו לבלוק טקסט אחד שיוזן ל-LLM."
+      }
+    },
+    {
+      "id": 3,
+      "module": "openai-gpt-3:CreateCompletion",
+      "version": 1,
+      "parameters": {
+        "__IFL__": "",
+        "__COMMENT__": "אפשר להחליף את מודול OpenAI במודול Anthropic Claude. הדבק את תוכן llm-system-prompt.txt בהודעת ה-system."
+      },
+      "mapper": {
+        "model": "gpt-4o",
+        "max_tokens": 2000,
+        "temperature": 0.7,
+        "messages": [
+          {
+            "role": "system",
+            "content": "הדבק כאן את כל תוכן הקובץ llm-system-prompt.txt"
+          },
+          {
+            "role": "user",
+            "content": "הנה אוסף הפוסטים שנאספו הבוקר מלינקדאין. נתח, סנן, דרג והחזר את רדאר הבוקר עם 5 הפוסטים הכי שווים וטיוטות תגובה לכל אחד:\n\n{{2.text}}"
+          }
+        ]
+      },
+      "metadata": {
+        "designer": { "x": 600, "y": 0 },
+        "restore": {}
+      }
+    },
+    {
+      "id": 4,
+      "module": "google-email:ActionSendEmail",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "to": ["REPLACE_WITH_KOCHAVIT_EMAIL"],
+        "subject": "☀️ רדאר הבוקר שלך בלינקדאין — {{formatDate(now; \"DD/MM/YYYY\")}}",
+        "html": "{{3.result}}",
+        "contentType": "html"
+      },
+      "metadata": {
+        "designer": { "x": 900, "y": 0 },
+        "restore": {},
+        "__COMMENT__": "לשליחה לוואטסאפ/טלגרם — החלף מודול זה במודול הערוץ הרצוי."
+      }
+    }
+  ],
+  "metadata": {
+    "instant": false,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": { "orphans": [] },
+    "scheduling": {
+      "type": "indefinitely",
+      "interval": 86400,
+      "restrict": [
+        {
+          "time": ["07:00"],
+          "__COMMENT__": "ריצה יומית ב-07:00. ודא שאזור הזמן של חשבון Make מוגדר לישראל."
+        }
+      ]
+    }
+  }
+}
