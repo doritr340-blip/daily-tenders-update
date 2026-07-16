@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מחולל הוראות עיצוב לקרוסלות</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="head">
+      <h1>🎠 מחולל הוראות עיצוב לקרוסלות</h1>
+      <p class="sub">מכניסים גריד (טבלה) + פונטים — מקבלים הוראות עיצוב מדויקות לכל סלייד, אחד לאחד.</p>
+    </header>
+
+    <!-- שלב 1: גריד -->
+    <section class="card">
+      <h2 class="step"><span class="num">1</span> קובץ הגריד</h2>
+      <p class="hint">כל שורה = סלייד. שורה ראשונה = כותרות עמודות. אפשר להעלות CSV או להדביק ישירות מ-Sheets/Excel.</p>
+      <div class="row">
+        <label class="file-btn">
+          📄 העלאת קובץ CSV
+          <input type="file" id="csvFile" accept=".csv,text/csv" hidden />
+        </label>
+        <button class="btn ghost" id="sampleBtn" type="button">טעינת דוגמה</button>
+        <button class="btn ghost" id="clearGrid" type="button">ניקוי</button>
+      </div>
+      <textarea id="gridInput" class="mono" rows="8" placeholder="מספר,סוג,כותרת,טקסט,CTA,ויזואל&#10;1,שער,הכותרת שלך כאן,תיאור קצר,,רקע מלא"></textarea>
+      <div id="detected" class="detected" hidden></div>
+    </section>
+
+    <!-- שלב 2: פונטים -->
+    <section class="card">
+      <h2 class="step"><span class="num">2</span> מערכת הפונטים</h2>
+      <p class="hint">מגדירים פונט + משקל + גודל לכל תפקיד. אפשר גם להדביק גוש פונטים והוא יזוהה אוטומטית.</p>
+      <div class="fonts-grid" id="fontsGrid"></div>
+      <details class="paste-fonts">
+        <summary>הדבקת גוש פונטים (אופציונלי)</summary>
+        <p class="hint">שורה לכל תפקיד, למשל: <code>כותרת: Heebo | Bold | 64</code></p>
+        <textarea id="fontsPaste" class="mono" rows="4" placeholder="כותרת ראשית: Heebo | Bold | 64&#10;טקסט גוף: Assistant | Regular | 30"></textarea>
+        <button class="btn ghost small" id="applyFontsPaste" type="button">החל</button>
+      </details>
+    </section>
+
+    <!-- פעולה -->
+    <div class="actions">
+      <button class="btn primary" id="generate" type="button">✨ צור הוראות עיצוב</button>
+    </div>
+
+    <!-- פלט -->
+    <section class="card output-card" id="outputCard" hidden>
+      <div class="output-head">
+        <h2 class="step"><span class="num">3</span> הוראות העיצוב</h2>
+        <div class="out-actions">
+          <button class="btn ghost small" id="copyBtn" type="button">📋 העתקה</button>
+          <button class="btn ghost small" id="downloadBtn" type="button">⬇️ הורדה (.md)</button>
+        </div>
+      </div>
+      <div id="summary" class="summary"></div>
+      <div id="slides" class="slides"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
